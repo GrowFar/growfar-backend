@@ -2,7 +2,7 @@ version: "3.6"
 
 services:
   db:
-    image: mysql
+    image: mysql:8.0
     container_name: growfar_db
     volumes:
       - "db_data:$HOME/$DB_PATH"
