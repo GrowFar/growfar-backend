@@ -21,7 +21,7 @@ module.exports = {
     args: {
       longitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
       latitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
-      radius: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
+      radius: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
     },
     resolve: async (_, { longitude, latitude, radius }) => {
       try {
