@@ -1,0 +1,54 @@
+version: "3.6"
+
+services:
+  db:
+    image: mysql
+    container_name: growfar_db
+    volumes:
+      - "db_data:$HOME/$DB_PATH"
+    environment:
+      MYSQL_ROOT_USER: $DB_USER
+      MYSQL_ROOT_PASSWORD: $DB_ROOT_PASS
+      MYSQL_DATABASE: $DB_NAME
+      MYSQL_USER: $DB_USER
+      MYSQL_PASSWORD: $DB_PASS
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3308:$DB_PORT"
+    networks:
+      - backend
+  tile38:
+    image: tile38/tile38
+    container_name: tile_server
+    ports:
+      - "9851:9851"
+    networks:
+      - backend
+  server:
+    image: node
+    container_name: growfar_backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "$SERVER_PORT:$SERVER_PORT"
+    volumes:
+      - "server_data:$HOME/$SERVER_PATH"
+    networks:
+      - backend
+    depends_on:
+      - $TILE38_HOST
+      - $DB_HOST
+
+volumes:
+  db_data:
+  server_data:
+
+networks:
+  backend:
+    driver: bridge
