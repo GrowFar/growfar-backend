@@ -5,10 +5,11 @@ const Category = require('./category');
 module.exports = {
   createNewCategory: {
     type: categoryService.categoryType,
-    args: { name: { type: graphql.GraphQLNonNull(graphql.GraphQLString) } },
-    resolve: async (_, { name }) => {
+    args: { categoryInput: { type: graphql.GraphQLNonNull(categoryService.categoryTypeInput) } },
+    resolve: async (_, { categoryInput }) => {
       try {
-        const category = new Category(name);
+        const { name, description } = categoryInput;
+        const category = new Category(name, description);
         await categoryService.checkCategoryIfExist(category);
         const id = await categoryService.insertNewCategory(category);
         return { id, ...category };

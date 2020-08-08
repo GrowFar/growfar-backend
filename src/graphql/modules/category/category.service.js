@@ -8,6 +8,7 @@ const categoryType = new graphql.GraphQLObjectType({
   fields: {
     id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
     name: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    description: { type: graphql.GraphQLString },
   },
 });
 
@@ -15,6 +16,7 @@ const categoryTypeInput = new graphql.GraphQLInputObjectType({
   name: 'CategoryInput',
   fields: {
     name: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    description: { type: graphql.GraphQLString },
   },
 });
 

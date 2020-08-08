@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: true,
     },
+    description: {
+      type: DataTypes.TEXT('tiny'),
+      allowNull: true,
+    },
   }, {
     underscored: true,
     timestamps: false,
