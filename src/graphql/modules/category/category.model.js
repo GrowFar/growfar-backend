@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
     freezeTableName: true,
   });
 
-  Category.hook = ('beforeCreate', (category) => {
+  Category.beforeCreate(category => {
     category.name = category.name
       .toLowerCase()
       .split(' ')

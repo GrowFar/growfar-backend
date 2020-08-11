@@ -1,8 +1,8 @@
 class Commodity {
-  constructor(name, tag, categoryId) {
+  constructor(name, category_id) {
     this.name = name;
-    this.tag = tag;
-    this.categoryId = categoryId;
+    this.tag = name;
+    this.category_id = category_id;
   }
 }
 

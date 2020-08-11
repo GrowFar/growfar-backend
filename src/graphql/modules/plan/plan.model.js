@@ -1,7 +1,5 @@
 'use strict';
 
-const SequelizeSlugify = require('sequelize-slugify');
-
 module.exports = (sequelize, DataTypes) => {
   const Plan = sequelize.define('Plan', {
     name: {
@@ -25,10 +23,6 @@ module.exports = (sequelize, DataTypes) => {
     underscored: true,
     timestamps: false,
     freezeTableName: true,
-  });
-
-  SequelizeSlugify.slugifyModel(Plan, {
-    source: ['slug'],
   });
 
   return Plan;
