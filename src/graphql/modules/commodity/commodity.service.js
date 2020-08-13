@@ -18,7 +18,7 @@ const commodityTypeInput = new graphql.GraphQLInputObjectType({
   name: 'CommodityInput',
   fields: {
     name: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
-    categoryId: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    category_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
   },
 });
 
@@ -33,7 +33,7 @@ module.exports = {
       throw new Error(error.message);
     }
   },
-  getCategoryById: async (id) => {
+  getCommodityById: async (id) => {
     try {
       const result = await Commodity.findOne({
         where: { id: { [Op.$eq]: id } },

@@ -11,9 +11,9 @@ module.exports = {
     args: { commodityInput: { type: graphql.GraphQLNonNull(commodityService.commodityTypeInput) } },
     resolve: async (_, { commodityInput }) => {
       try {
-        const { name, categoryId } = commodityInput;
-        const commodity = new Commodity(name, categoryId);
-        const category = await categoryService.getCategoryById(categoryId);
+        const { name, category_id } = commodityInput;
+        const commodity = new Commodity(name, category_id);
+        const category = await categoryService.getCategoryById(category_id);
         const id = await commodityService.insertNewCommodity(commodity);
         return { id, ...commodity, category };
       } catch (error) {

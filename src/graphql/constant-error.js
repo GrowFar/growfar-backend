@@ -6,4 +6,5 @@ module.exports = {
   CATEGORY_NOT_FOUND: 'Category not found',
   CATEGORY_IS_EXISTS: 'Category already exists',
   COMMODITY_NOT_FOUND: 'Commodity not found',
+  MARKET_NOT_FOUND: 'Market not found',
 };

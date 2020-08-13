@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true,
     },
+    submitAt: {
+      type: DataTypes.DATE,
+      defaultValue: sequelize.fn('NOW'),
+    },
     price: {
       type: DataTypes.INTEGER,
       allowNull: false,

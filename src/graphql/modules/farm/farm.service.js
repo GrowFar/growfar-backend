@@ -18,6 +18,14 @@ const farmType = new graphql.GraphQLObjectType({
   },
 });
 
+const farmShortType = new graphql.GraphQLObjectType({
+  name: 'FarmShort',
+  fields: {
+    id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    name: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+  },
+});
+
 const farmInput = new graphql.GraphQLInputObjectType({
   name: 'FarmInput',
   fields: {
@@ -51,6 +59,7 @@ const farmLocationInput = new graphql.GraphQLInputObjectType({
 
 module.exports = {
   farmType,
+  farmShortType,
   farmInput,
   farmLocation,
   farmLocationInput,
