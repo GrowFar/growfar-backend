@@ -36,8 +36,11 @@ Category.hasMany(Commodity, { foreignKey: { name: 'category_id', allowNull: fals
 Commodity.belongsTo(Category, { foreignKey: { name: 'category_id', allowNull: false } });
 
 // M:N
-Farm.belongsToMany(Commodity, { through: { model: Market, primaryKey: { name: 'id', allowNull: false } }, foreignKey: { name: 'farm_id', allowNull: false } });
-Commodity.belongsToMany(Farm, { through: { model: Market, primaryKey: { name: 'id', allowNull: false } }, foreignKey: { name: 'commodity_id', allowNull: false } });
+Farm.hasMany(Market, { foreignKey: { name: 'farm_id', allowNull: false } });
+Market.belongsTo(Farm, { foreignKey: { name: 'farm_id', allowNull: false } });
+
+Commodity.hasMany(Market, { foreignKey: { name: 'farm_id', allowNull: false } });
+Market.belongsTo(Commodity, { foreignKey: { name: 'commodity_id', allowNull: false } });
 
 isOpen().then(() => {
   console.log('Database Connection is Open');

@@ -1,7 +1,8 @@
 const graphql = require('graphql');
 
 const ErrorMessage = require('../../constant-error');
-const { Market, Op, Farm, Commodity } = require('../../../database');
+const { DAY_IN_MILLIS, WEEK_IN_MILLIS, MAX_DAY } = require('../../constant-value');
+const { Market, Op, Farm } = require('../../../database');
 const farmService = require('../farm/farm.service');
 
 const marketType = new graphql.GraphQLObjectType({
@@ -38,8 +39,8 @@ const farmMarketType = new graphql.GraphQLObjectType({
   fields: {
     id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
     submit_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    farm: { type: graphql.GraphQLNonNull(farmService.farmType) },
     price: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
-    farm: { type: graphql.GraphQLNonNull(farmService.farmShortType) },
   },
 });
 
@@ -82,47 +83,54 @@ module.exports = {
   getFarmMarketDataNearby: async (points, commodity_id) => {
     try {
       const ids = [];
-      const result = [];
       const data = [];
+
+      const currentDate = Date.now();
+
+      let currentPriceData = 0;
+      let previousPriceData = 0;
+
+      let maxCurrentPrice = 0;
+      let maxPreviousPrice = 0;
+
       points.map(({ id }) => ids.push(id.split('-')[1]));
 
       const farmMarketResult = await Market.findAll({
-        where: { farm_id: { [Op.$in]: ids } },
-        include: [
-          {
-            attributes: ['id', 'name'],
-            model: Farm,
-          },
-          {
-            attributes: ['id', 'name', 'tag'],
-            model: Commodity,
-            where: { id: { [Op.$eq]: commodity_id } },
-          },
-        ],
-        nested: true,
+        where: {
+          farm_id: { [Op.$in]: ids },
+          commodity_id: { [Op.$eq]: commodity_id },
+          submit_at: { [Op.$between]: [currentDate, new Date(currentDate + (2 * WEEK_IN_MILLIS))] },
+        },
+        include: Farm,
       });
 
       farmMarketResult.map(res => {
         const farmMarketSub = {
           id: res.id,
-          submit_at: res.submit_at,
+          submit_at: res.submitAt,
           farm: res.Farm.dataValues,
           price: res.price,
         };
+
+        const dday = (currentDate.getTime() - new Date(res.submitAt).getTime()) / DAY_IN_MILLIS;
+
+        if (Math.round(dday) < MAX_DAY) {
+          currentPriceData++;
+          maxCurrentPrice += res.price;
+        } else {
+          previousPriceData++;
+          maxPreviousPrice += res.price;
+        }
+
         data.push(farmMarketSub);
+
       });
 
-      const mergedResult = {
-        previousPrice: 1,
-        currentPrice: 0,
+      return {
+        previousPrice: maxPreviousPrice / previousPriceData || 0,
+        currentPrice: maxCurrentPrice / currentPriceData || 0,
         data,
       };
-
-      result.push(mergedResult);
-
-      console.log(result);
-
-      return result;
     } catch (error) {
       throw new Error(error.message);
     }
