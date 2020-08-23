@@ -22,8 +22,8 @@ const userType = new graphql.GraphQLObjectType({
   name: 'User',
   fields: {
     id: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    uid: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     fullname: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
-    email: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     phone: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     role: { type: graphql.GraphQLNonNull(roleEnum) },
   },
@@ -32,9 +32,8 @@ const userType = new graphql.GraphQLObjectType({
 const userInput = new graphql.GraphQLInputObjectType({
   name: 'UserInput',
   fields: {
+    uid: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     fullname: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
-    email: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
-    password: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     phone: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     role: { type: graphql.GraphQLNonNull(roleEnum) },
   },
@@ -47,7 +46,7 @@ module.exports = {
   getUserById: async (id) => {
     try {
       const result = await User.findOne({
-        attributes: ['id', 'fullname', 'email', 'phone', 'role'],
+        attributes: ['id', 'uid', 'fullname', 'phone', 'role'],
         where: { id: { [Op.$eq]: id } },
       });
 
@@ -57,11 +56,11 @@ module.exports = {
       throw new Error(error.message);
     }
   },
-  getUserByEmail: async (email) => {
+  getUserByPhone: async (phone) => {
     try {
       const result = await User.findOne({
-        attributes: ['id', 'fullname', 'email', 'phone', 'role'],
-        where: { email: { [Op.$like]: email } },
+        attributes: ['id', 'uid', 'fullname', 'phone', 'role'],
+        where: { phone: { [Op.$eq]: phone } },
       });
 
       if (!result) throw new Error(ErrorMessage.USER_NOT_FOUND);
@@ -70,11 +69,11 @@ module.exports = {
       throw new Error(error.message);
     }
   },
-  checkUserIfExists: async (email, phone) => {
+  checkUserIfExists: async (phone, uid) => {
     try {
       const result = await User.findOne({
-        attributes: ['id', 'fullname', 'email', 'phone'],
-        where: { [Op.$or]: { email: { [Op.$eq]: email }, phone: { [Op.$eq]: phone } } },
+        attributes: ['id', 'fullname', 'phone', 'uid'],
+        where: { [Op.$or]: { phone: { [Op.$eq]: phone }, uid: { [Op.$eq]: uid } } },
       });
 
       if (result) throw new Error(ErrorMessage.USER_IS_EXISTS);

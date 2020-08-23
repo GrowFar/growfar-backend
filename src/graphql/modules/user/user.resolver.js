@@ -13,12 +13,12 @@ module.exports = {
       }
     },
   },
-  findUserByEmail: {
+  findUserByPhone: {
     type: userService.userType,
-    args: { email: { type: graphql.GraphQLNonNull(graphql.GraphQLString) } },
-    resolve: async (_, { email }) => {
+    args: { phone: { type: graphql.GraphQLNonNull(graphql.GraphQLString) } },
+    resolve: async (_, { phone }) => {
       try {
-        return await userService.getUserByEmail(email);
+        return await userService.getUserByPhone(phone);
       } catch (error) {
         throw new Error(error.message);
       }

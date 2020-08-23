@@ -5,28 +5,18 @@ const ROLE = Object.keys(USER_ROLE).map(key => USER_ROLE[key]);
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
+    uid: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+    },
     fullname: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    email: {
-      type: DataTypes.STRING(250),
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
-    },
-    password: {
-      type: DataTypes.STRING(150),
-      allowNull: false,
-      validate: {
-        min: 8,
-      },
-    },
     phone: {
       type: DataTypes.STRING(20),
       allowNull: true,
+      unique: true,
       validate: {
         min: 10,
       },
@@ -41,5 +31,14 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: true,
     freezeTableName: true,
   });
+
+  User.beforeCreate(user => {
+
+    if (user.phone.startsWith('0')) {
+      user.phone = '+62' + user.phone.substring(1);
+    }
+
+  });
+
   return User;
 };
