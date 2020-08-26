@@ -16,6 +16,19 @@ module.exports = {
       }
     },
   },
+  findFarmByUserId: {
+    type: farmService.farmType,
+    args: { user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) } },
+    resolve: async (_, { user_id }) => {
+      try {
+        const farm = await farmService.getFarmByUserId(user_id);
+        const user = await userService.getUserById(user_id);
+        return { ...farm, user };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
   findFarmLocationNearby: {
     type: graphql.GraphQLList(farmService.farmType),
     args: {

@@ -99,7 +99,7 @@ module.exports = {
         where: {
           farm_id: { [Op.$in]: ids },
           commodity_id: { [Op.$eq]: commodity_id },
-          submit_at: { [Op.$between]: [currentDate, new Date(currentDate + (2 * WEEK_IN_MILLIS))] },
+          submit_at: { [Op.$between]: [currentDate, new Date(currentDate - (2 * WEEK_IN_MILLIS))] },
         },
         include: Farm,
       });

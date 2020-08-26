@@ -75,6 +75,18 @@ module.exports = {
       throw new Error(error.message);
     }
   },
+  getFarmByUserId: async (user_id) => {
+    try {
+      const result = await Farm.findOne({
+        where: { user_id: { [Op.$eq]: user_id } },
+      });
+
+      if (!result) throw new Error(ErrorMessage.FARM_NOT_FOUND);
+      return result.dataValues;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
   insertNewFarm: async (farm) => {
     try {
       const result = await Farm.create(farm);
