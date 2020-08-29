@@ -35,4 +35,21 @@ module.exports = {
       }
     },
   },
+  findCommodityByFarmId: {
+    type: graphql.GraphQLList(commodityService.commodityType),
+    args: {
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      limit: { type: graphql.GraphQLInt },
+      page: { type: graphql.GraphQLInt },
+    },
+    resolve: async (_, { farm_id, limit, page }) => {
+      try {
+        const pagination = new Pagination(limit, page);
+        const result = await commodityService.getCommoditiesByFarmId(farm_id, pagination);
+        return result;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
 };

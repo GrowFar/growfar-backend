@@ -5,8 +5,8 @@ const logger = require('morgan');
 const graphqlHTTP = require('express-graphql');
 const app = express();
 
-require('./database');
-require('./tile38');
+const { connection } = require('./database');
+const { flushDb } = require('./tile38');
 
 const { SERVER_PORT, NODE_ENV, AUTH_TOKEN } = require('./config');
 const { notFound, errorHandler } = require('./middlewares');
@@ -33,6 +33,20 @@ app.use('/graphql', express.json(), graphqlHTTP((req, res, params) => ({
     ...req.state,
   },
 })));
+
+app.get('/seeding', async (req, res, next) => {
+  try {
+
+    if (NODE_ENV === 'development') {
+      await connection.sync({ force: NODE_ENV === 'development' });
+      await flushDb();
+    }
+
+    res.status(200).json({ message: 'Seeding successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.use(notFound);
 app.use(errorHandler);

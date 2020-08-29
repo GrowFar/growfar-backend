@@ -9,9 +9,12 @@ const close = async () => await tileClient.quit();
 
 const status = async () => await tileClient.status();
 
+const flushDb = async () => await tileClient.flushdb();
+
 module.exports = {
   tileClient,
   isOpen,
   close,
   status,
+  flushDb,
 };

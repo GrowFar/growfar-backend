@@ -1,7 +1,6 @@
 const { connection, isOpen, close } = require('./connection');
 const { 'operatorsAliases': Op } = require('./operator');
 const { Sequelize } = require('sequelize');
-const { NODE_ENV } = require('../config');
 
 const CategoryModel = require('../graphql/modules/category/category.model');
 const CommodityModel = require('../graphql/modules/commodity/commodity.model');
@@ -44,9 +43,8 @@ Market.belongsTo(Commodity, { foreignKey: { name: 'commodity_id', allowNull: fal
 
 isOpen().then(() => {
   console.log('Database Connection is Open');
-  connection.sync({ force: NODE_ENV === 'development' });
 }).catch(error => {
-  console.log(error);
+  console.error(error);
   close();
 });
 

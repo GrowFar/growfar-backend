@@ -1,7 +1,7 @@
 const graphql = require('graphql');
 
 const ErrorMessage = require('../../constant-error');
-const { Commodity, Op, Category } = require('../../../database');
+const { Commodity, Op, Category, Market } = require('../../../database');
 const { categoryType } = require('../category/category.service');
 
 const commodityType = new graphql.GraphQLObjectType({
@@ -49,7 +49,7 @@ module.exports = {
     try {
       const result = [];
       const { limit, offset } = pagination;
-      const categoryResult = await Commodity.findAll({
+      const commodityResult = await Commodity.findAll({
         order: [['id', 'ASC']],
         offset: offset,
         limit: limit,
@@ -60,12 +60,47 @@ module.exports = {
         nested: true,
       });
 
-      categoryResult.map(res => {
+      commodityResult.map(res => {
         const commodity = {
           id: res.id,
           name: res.name,
           tag: res.tag,
           category: res.Category.dataValues,
+        };
+        result.push(commodity);
+      });
+
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getCommoditiesByFarmId: async (farm_id, pagination) => {
+    try {
+      const result = [];
+      const { limit, offset } = pagination;
+
+      const commodityResult = await Market.findAll({
+        order: [['created_at', 'desc']],
+        offset: offset,
+        limit: limit,
+        include: [{
+          attributes: ['id', 'name', 'tag'],
+          model: Commodity,
+          include: [{
+            attributes: ['id', 'name', 'description'],
+            model: Category,
+          }],
+        }],
+        where: { farm_id: { [Op.$eq]: farm_id } },
+      });
+
+      commodityResult.map(res => {
+        const commodity = {
+          id: res.Commodity.dataValues.id,
+          name: res.Commodity.dataValues.name,
+          tag: res.Commodity.dataValues.tag,
+          category: res.Commodity.Category.dataValues,
         };
         result.push(commodity);
       });

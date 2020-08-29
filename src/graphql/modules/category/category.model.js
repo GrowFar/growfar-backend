@@ -1,5 +1,7 @@
 'use strict';
 
+const { capitalize } = require('../../../helpers/string.custom');
+
 module.exports = (sequelize, DataTypes) => {
   const Category = sequelize.define('Category', {
     name: {
@@ -18,11 +20,7 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Category.beforeCreate(category => {
-    category.name = category.name
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    category.name = capitalize(category.name);
   });
 
   return Category;

@@ -9,10 +9,11 @@ module.exports = {
     resolve: async (_, { categoryInput }) => {
       try {
         const { name, description } = categoryInput;
-        const category = new Category(name, description);
-        await categoryService.checkCategoryIfExist(category);
-        const id = await categoryService.insertNewCategory(category);
-        return { id, ...category };
+        const categoryEntity = new Category(name, description);
+        await categoryService.checkCategoryIfExist(categoryEntity);
+        const id = await categoryService.insertNewCategory(categoryEntity);
+        const category = await categoryService.getCategoryById(id);
+        return category;
       } catch (error) {
         throw new Error(error.message);
       }

@@ -99,7 +99,7 @@ module.exports = {
         where: {
           farm_id: { [Op.$in]: ids },
           commodity_id: { [Op.$eq]: commodity_id },
-          submit_at: { [Op.$between]: [currentDate, new Date(currentDate - (2 * WEEK_IN_MILLIS))] },
+          submit_at: { [Op.$between]: [new Date(currentDate - (2 * WEEK_IN_MILLIS)), currentDate] },
         },
         include: Farm,
       });
@@ -112,7 +112,7 @@ module.exports = {
           price: res.price,
         };
 
-        const dday = (currentDate.getTime() - new Date(res.submitAt).getTime()) / DAY_IN_MILLIS;
+        const dday = (currentDate - new Date(res.submitAt).getTime()) / DAY_IN_MILLIS;
 
         if (Math.round(dday) < MAX_DAY) {
           currentPriceData++;

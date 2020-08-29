@@ -12,10 +12,11 @@ module.exports = {
     resolve: async (_, { commodityInput }) => {
       try {
         const { name, category_id } = commodityInput;
-        const commodity = new Commodity(name, category_id);
+        const commodityEntity = new Commodity(name, category_id);
         const category = await categoryService.getCategoryById(category_id);
-        const id = await commodityService.insertNewCommodity(commodity);
-        return { id, ...commodity, category };
+        const id = await commodityService.insertNewCommodity(commodityEntity);
+        const commodity = await commodityService.getCommodityById(id);
+        return { ...commodity, category };
       } catch (error) {
         throw new Error(error.message);
       }

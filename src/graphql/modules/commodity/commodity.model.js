@@ -1,5 +1,7 @@
 'use strict';
 
+const { slug, capitalize } = require('../../../helpers/string.custom');
+
 module.exports = (sequelize, DataTypes) => {
   const Commodity = sequelize.define('Commodity', {
     name: {
@@ -18,17 +20,8 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Commodity.beforeCreate(commodity => {
-    commodity.name = commodity.name
-      .trim()
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-
-    commodity.tag = commodity.name
-      .trim()
-      .replace(' ', '-')
-      .toLowerCase();
+    commodity.name = capitalize(commodity.name);
+    commodity.tag = slug(commodity.name);
   });
 
   return Commodity;
