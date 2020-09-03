@@ -36,7 +36,7 @@ module.exports = {
     },
   },
   findCommodityByFarmId: {
-    type: graphql.GraphQLList(commodityService.commodityType),
+    type: graphql.GraphQLList(commodityService.commodityOwnerType),
     args: {
       farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
       limit: { type: graphql.GraphQLInt },

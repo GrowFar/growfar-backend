@@ -27,7 +27,6 @@ services:
     networks:
       - backend
   server:
-    image: node
     container_name: growfar_backend
     build:
       context: .

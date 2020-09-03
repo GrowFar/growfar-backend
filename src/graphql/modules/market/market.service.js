@@ -2,7 +2,7 @@ const graphql = require('graphql');
 
 const ErrorMessage = require('../../constant-error');
 const { DAY_IN_MILLIS, WEEK_IN_MILLIS, MAX_DAY } = require('../../constant-value');
-const { Market, Op, Farm } = require('../../../database');
+const { Market, Op, Farm, Commodity } = require('../../../database');
 const farmService = require('../farm/farm.service');
 
 const marketType = new graphql.GraphQLObjectType({
@@ -53,12 +53,22 @@ const marketPriceReportType = new graphql.GraphQLObjectType({
   },
 });
 
+const marketPriceCommodityType = new graphql.GraphQLObjectType({
+  name: 'MarketPriceCommodity',
+  fields: {
+    currentPrice: { type: graphql.GraphQLInt },
+    nearbyPrice: { type: graphql.GraphQLInt },
+    commodityName: { type: graphql.GraphQLString },
+  },
+});
+
 module.exports = {
   marketType,
   marketInput,
   farmMarketType,
   farmMarketAllType,
   marketPriceReportType,
+  marketPriceCommodityType,
   insertNewMarket: async (market) => {
     try {
       const result = await Market.create(market);
@@ -130,6 +140,38 @@ module.exports = {
         previousPrice: maxPreviousPrice / previousPriceData || 0,
         currentPrice: maxCurrentPrice / currentPriceData || 0,
         data,
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getFarmMarketCommodityNearby: async (points, commodity_id, farm_id) => {
+    try {
+      const ids = [];
+
+      points.map(({ id }) => ids.push(id.split('-')[1]));
+
+      const farmMarketResult = await Market.findOne({
+        where: {
+          farm_id: { [Op.$in]: ids },
+          commodity_id: { [Op.$eq]: commodity_id },
+        },
+        order: [['submit_at', 'desc']],
+        include: Commodity,
+      });
+
+      const userFarmMarket = await Market.findOne({
+        where: {
+          farm_id: { [Op.$eq]: farm_id },
+          commodity_id: { [Op.$eq]: commodity_id },
+        },
+        order: [['submit_at', 'desc']],
+      });
+
+      return {
+        currentPrice: userFarmMarket.dataValues.price,
+        nearbyPrice: farmMarketResult.dataValues.price,
+        commodityName: farmMarketResult.dataValues.Commodity.name,
       };
     } catch (error) {
       throw new Error(error.message);
