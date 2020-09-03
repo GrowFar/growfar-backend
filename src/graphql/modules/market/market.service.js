@@ -152,27 +152,28 @@ module.exports = {
       points.map(({ id }) => ids.push(id.split('-')[1]));
 
       const farmMarketResult = await Market.findOne({
+        attributes: ['price'],
         where: {
           farm_id: { [Op.$in]: ids },
           commodity_id: { [Op.$eq]: commodity_id },
         },
         order: [['submit_at', 'desc']],
         include: Commodity,
-      });
+      }) || {};
 
-      const userFarmMarket = await Market.findOne({
+      const userFarmMarketResult = await Market.findOne({
+        attributes: ['price'],
         where: {
           farm_id: { [Op.$eq]: farm_id },
           commodity_id: { [Op.$eq]: commodity_id },
         },
         order: [['submit_at', 'desc']],
-      });
+      }) || {};
 
-      return {
-        currentPrice: userFarmMarket.dataValues.price,
-        nearbyPrice: farmMarketResult.dataValues.price,
-        commodityName: farmMarketResult.dataValues.Commodity.name,
-      };
+      const { 'price': currentPrice = 0 } = userFarmMarketResult.dataValues || {};
+      const { 'price': nearbyPrice = 0 } = farmMarketResult.dataValues || {};
+
+      return { currentPrice, nearbyPrice };
     } catch (error) {
       throw new Error(error.message);
     }

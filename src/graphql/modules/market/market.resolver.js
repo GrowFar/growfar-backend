@@ -1,6 +1,7 @@
 const graphql = require('graphql');
 const marketService = require('./market.service');
 const farmService = require('../farm/farm.service');
+const commodityService = require('../commodity/commodity.service');
 
 module.exports = {
   findFarmMarketNearby: {
@@ -34,8 +35,9 @@ module.exports = {
       try {
         const { points } = await farmService.getFarmNearby(longitude, latitude, radius);
         const { 'id': farm_id } = await farmService.getFarmByUserId(user_id);
+        const { 'name': commodityName } = await commodityService.getCommodityById(commodity_id);
         const farmMarketCommodityResult = await marketService.getFarmMarketCommodityNearby(points, commodity_id, farm_id);
-        return farmMarketCommodityResult;
+        return { ...farmMarketCommodityResult, commodityName };
       } catch (error) {
         throw new Error(error.message);
       }
