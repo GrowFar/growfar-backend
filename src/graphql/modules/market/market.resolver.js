@@ -36,8 +36,9 @@ module.exports = {
         const { points } = await farmService.getFarmNearby(longitude, latitude, radius);
         const { 'id': farm_id } = await farmService.getFarmByUserId(user_id);
         const { 'name': commodityName } = await commodityService.getCommodityById(commodity_id);
-        const farmMarketCommodityResult = await marketService.getFarmMarketCommodityNearby(points, commodity_id, farm_id);
-        return { ...farmMarketCommodityResult, commodityName };
+        const currentPrice = await marketService.getMarketByFarmIdAndCommodityId(commodity_id, farm_id);
+        const nearbyData = await marketService.getFarmMarketCommodityNearby(points, commodity_id);
+        return { currentPrice, ...nearbyData, commodityName };
       } catch (error) {
         throw new Error(error.message);
       }

@@ -1,5 +1,4 @@
 module.exports = {
-  SALT_ROUND: 12,
   TILE_KEY_FARM: 'farms',
   TILE_RADIUS: 1000,
   SECOND_IN_MILLIS: 1000,
@@ -8,4 +7,6 @@ module.exports = {
   DAY_IN_MILLIS: 864e5,
   WEEK_IN_MILLIS: 6048e5,
   MAX_DAY: 7,
+  DATE_FORMAT: 'YYYY-MM-DD HH:mm:ss',
+  PERCENTAGE: 100,
 };

@@ -1,9 +1,18 @@
 const graphql = require('graphql');
 
+const { QueryTypes } = require('sequelize');
+
 const ErrorMessage = require('../../constant-error');
-const { DAY_IN_MILLIS, WEEK_IN_MILLIS, MAX_DAY } = require('../../constant-value');
-const { Market, Op, Farm, Commodity } = require('../../../database');
+const { WEEK_IN_MILLIS, DATE_FORMAT, PERCENTAGE } = require('../../constant-value');
+const { Market, Op, connection } = require('../../../database');
 const farmService = require('../farm/farm.service');
+const moment = require('moment');
+
+const currentDate = Date.now();
+const dateNowWeek = moment(currentDate).format(DATE_FORMAT);
+const dateOneWeekAgo = moment(new Date(currentDate - (1 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
+const dateTwoWeekAgo = moment(new Date(currentDate - (2 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
+const dateThreeWeekAgo = moment(new Date(currentDate - (3 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
 
 const marketType = new graphql.GraphQLObjectType({
   name: 'Market',
@@ -37,8 +46,6 @@ const farmMarketAllType = new graphql.GraphQLObjectType({
 const farmMarketType = new graphql.GraphQLObjectType({
   name: 'FarmMarket',
   fields: {
-    id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
-    submit_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     farm: { type: graphql.GraphQLNonNull(farmService.farmType) },
     price: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
   },
@@ -48,7 +55,9 @@ const marketPriceReportType = new graphql.GraphQLObjectType({
   name: 'MarketPriceReport',
   fields: {
     previousPrice: { type: graphql.GraphQLInt },
+    previousPercentage: { type: graphql.GraphQLFloat },
     currentPrice: { type: graphql.GraphQLInt },
+    currentPercentage: { type: graphql.GraphQLFloat },
     data: { type: graphql.GraphQLList(farmMarketType) },
   },
 });
@@ -58,6 +67,7 @@ const marketPriceCommodityType = new graphql.GraphQLObjectType({
   fields: {
     currentPrice: { type: graphql.GraphQLInt },
     nearbyPrice: { type: graphql.GraphQLInt },
+    percentage: { type: graphql.GraphQLFloat },
     commodityName: { type: graphql.GraphQLString },
   },
 });
@@ -90,77 +100,8 @@ module.exports = {
       throw new Error(error.message);
     }
   },
-  getFarmMarketDataNearby: async (points, commodity_id) => {
+  getMarketByFarmIdAndCommodityId: async (commodity_id, farm_id) => {
     try {
-      const ids = [];
-      const data = [];
-
-      const currentDate = Date.now();
-
-      let currentPriceData = 0;
-      let previousPriceData = 0;
-
-      let maxCurrentPrice = 0;
-      let maxPreviousPrice = 0;
-
-      points.map(({ id }) => ids.push(id.split('-')[1]));
-
-      const farmMarketResult = await Market.findAll({
-        where: {
-          farm_id: { [Op.$in]: ids },
-          commodity_id: { [Op.$eq]: commodity_id },
-          submit_at: { [Op.$between]: [new Date(currentDate - (2 * WEEK_IN_MILLIS)), currentDate] },
-        },
-        include: Farm,
-      });
-
-      farmMarketResult.map(res => {
-        const farmMarketSub = {
-          id: res.id,
-          submit_at: res.submitAt,
-          farm: res.Farm.dataValues,
-          price: res.price,
-        };
-
-        const dday = (currentDate - new Date(res.submitAt).getTime()) / DAY_IN_MILLIS;
-
-        if (Math.round(dday) < MAX_DAY) {
-          currentPriceData++;
-          maxCurrentPrice += res.price;
-        } else {
-          previousPriceData++;
-          maxPreviousPrice += res.price;
-        }
-
-        data.push(farmMarketSub);
-
-      });
-
-      return {
-        previousPrice: maxPreviousPrice / previousPriceData || 0,
-        currentPrice: maxCurrentPrice / currentPriceData || 0,
-        data,
-      };
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  },
-  getFarmMarketCommodityNearby: async (points, commodity_id, farm_id) => {
-    try {
-      const ids = [];
-
-      points.map(({ id }) => ids.push(id.split('-')[1]));
-
-      const farmMarketResult = await Market.findOne({
-        attributes: ['price'],
-        where: {
-          farm_id: { [Op.$in]: ids },
-          commodity_id: { [Op.$eq]: commodity_id },
-        },
-        order: [['submit_at', 'desc']],
-        include: Commodity,
-      }) || {};
-
       const userFarmMarketResult = await Market.findOne({
         attributes: ['price'],
         where: {
@@ -171,9 +112,179 @@ module.exports = {
       }) || {};
 
       const { 'price': currentPrice = 0 } = userFarmMarketResult.dataValues || {};
-      const { 'price': nearbyPrice = 0 } = farmMarketResult.dataValues || {};
 
-      return { currentPrice, nearbyPrice };
+      return currentPrice;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getFarmMarketDataNearby: async (points, commodity_id) => {
+    try {
+      const ids = [0];
+      const data = [];
+
+      points.map(({ id }) => ids.push(id.split('-')[1]));
+
+      const farmMarketDataResult = await connection.query(`
+        SELECT f.id AS farm_id, f.name AS farm_name, f.address AS farm_address, f.longitude AS farm_longitude, f.latitude AS farm_latitude,
+        u.id AS user_id, u.uid AS user_uid, u.fullname AS user_fullname, u.phone AS user_phone, u.\`role\` AS user_role, m2.price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          ON m2.farm_id = latest_market.farm_id
+        JOIN Farm f ON f.id = m2.farm_id
+        JOIN User u ON u.id = f.user_id
+        WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+      `, { type: QueryTypes.SELECT }) || {};
+
+      farmMarketDataResult.map(res => {
+        const farmMarketSub = {
+          farm: {
+            id: res.farm_id,
+            name: res.farm_name,
+            user: {
+              id: res.user_id,
+              uid: res.user_uid,
+              fullname: res.user_fullname,
+              phone: res.user_phone,
+              role: res.user_role,
+            },
+            address: res.farm_address,
+            longitude: res.farm_longitude,
+            latitude: res.farm_latitude,
+          },
+          price: res.price,
+        };
+
+        data.push(farmMarketSub);
+      });
+
+      const farmMarketPriceResult = [{ price: 0 }, { price: 0 }, { price: 0 }];
+
+      const priceResult = await connection.query(`
+        SELECT IFNULL(sum(m2.price), 0) AS price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateThreeWeekAgo}' AND '${dateTwoWeekAgo}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+        UNION
+        SELECT IFNULL(sum(m2.price), 0) AS price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateTwoWeekAgo}' AND '${dateOneWeekAgo}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+        UNION
+        SELECT IFNULL(sum(m2.price), 0) AS price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          ON m2.farm_id = latest_market.farm_id
+        WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+      `, { type: QueryTypes.SELECT });
+
+      priceResult.map(({ price }, idx) => {
+        price = parseInt(price);
+        farmMarketPriceResult[idx].price = !price ? 0 : price;
+      });
+
+      const [weekThree, weekTwo, weekOne] = farmMarketPriceResult;
+
+      weekThree.price = weekThree.price || 0 / ids.length;
+      weekTwo.price = weekTwo.price || 0 / ids.length;
+      weekOne.price = weekOne.price || 0 / ids.length;
+
+      let currentPercentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
+      let previousPercentage = ((weekTwo.price - weekThree.price) / weekThree.price) * PERCENTAGE;
+
+      currentPercentage = isFinite(currentPercentage) ? currentPercentage.toFixed(2) : 0;
+      previousPercentage = isFinite(previousPercentage) ? previousPercentage.toFixed(2) : 0;
+
+      return {
+        previousPrice: weekTwo.price || 0,
+        previousPercentage: previousPercentage,
+        currentPrice: weekOne.price || 0,
+        currentPercentage: currentPercentage,
+        data,
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getFarmMarketCommodityNearby: async (points, commodity_id) => {
+    try {
+      const ids = [];
+
+      points.map(({ id }) => ids.push(id.split('-')[1]));
+
+      const farmMarketNearbyResult = await Market.findOne({
+        attributes: ['price'],
+        where: {
+          farm_id: { [Op.$in]: ids },
+          commodity_id: { [Op.$eq]: commodity_id },
+        },
+        order: [['submit_at', 'desc']],
+      }) || {};
+
+      const farmMarketResult = await connection.query(`
+        SELECT sum(m2.price) AS price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateTwoWeekAgo}' AND '${dateOneWeekAgo}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+        UNION
+        SELECT sum(m2.price) AS price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          ON m2.farm_id = latest_market.farm_id
+        WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+      `, { type: QueryTypes.SELECT }) || {};
+
+      const [weekTwo, weekOne] = farmMarketResult || [0, 0];
+
+      weekTwo.price = weekTwo.price / ids.length;
+      weekOne.price = weekOne.price / ids.length;
+
+      const percentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
+      const { 'price': nearbyPrice = 0 } = farmMarketNearbyResult.dataValues || {};
+
+      return { nearbyPrice, percentage: percentage.toFixed(2) };
     } catch (error) {
       throw new Error(error.message);
     }

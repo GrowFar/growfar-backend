@@ -1,11 +1,9 @@
 const graphql = require('graphql');
-const bcrypt = require('bcrypt');
 const _ = require('lodash');
 
 const ErrorMessage = require('../../constant-error');
 const { User, Op } = require('../../../database');
 const { USER_ROLE } = require('../../../config');
-const { SALT_ROUND } = require('../../constant-value');
 
 const ROLES = _.assign({}, ...Object.keys(USER_ROLE).map(key => {
   const result = {};
@@ -42,7 +40,6 @@ const userInput = new graphql.GraphQLInputObjectType({
 module.exports = {
   userType,
   userInput,
-  hashUserPassword: async (password) => bcrypt.hash(password, SALT_ROUND),
   getUserById: async (id) => {
     try {
       const result = await User.findOne({
