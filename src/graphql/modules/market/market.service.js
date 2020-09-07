@@ -236,7 +236,7 @@ module.exports = {
   },
   getFarmMarketCommodityNearby: async (points, commodity_id) => {
     try {
-      const ids = [];
+      const ids = [0];
 
       points.map(({ id }) => ids.push(id.split('-')[1]));
 
@@ -249,7 +249,9 @@ module.exports = {
         order: [['submit_at', 'desc']],
       }) || {};
 
-      const farmMarketResult = await connection.query(`
+      const farmMarketResult = [{ price: 0 }, { price: 0 }];
+
+      const priceResult = await connection.query(`
         SELECT sum(m2.price) AS price
         FROM Market m2
         INNER JOIN (
@@ -276,15 +278,23 @@ module.exports = {
         AND m2.submit_at = latest_market.submit_at
       `, { type: QueryTypes.SELECT }) || {};
 
-      const [weekTwo, weekOne] = farmMarketResult || [0, 0];
+      priceResult.map(({ price }, idx) => {
+        price = parseInt(price);
+        farmMarketResult[idx].price = !price ? 0 : price;
+      });
 
-      weekTwo.price = weekTwo.price / ids.length;
-      weekOne.price = weekOne.price / ids.length;
+      const [weekTwo, weekOne] = farmMarketResult;
 
-      const percentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
+      weekTwo.price = weekTwo.price || 0 / ids.length;
+      weekOne.price = weekOne.price || 0 / ids.length;
+
+      let percentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
+
+      percentage = isFinite(percentage) ? percentage.toFixed(2) : 0;
+
       const { 'price': nearbyPrice = 0 } = farmMarketNearbyResult.dataValues || {};
 
-      return { nearbyPrice, percentage: percentage.toFixed(2) };
+      return { nearbyPrice, percentage };
     } catch (error) {
       throw new Error(error.message);
     }
