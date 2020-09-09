@@ -66,6 +66,28 @@ const marketPriceCommodityType = new graphql.GraphQLObjectType({
   },
 });
 
+const percentageDecision = (percentage) => {
+  if (percentage >= PERCENTAGE) {
+    percentage = percentage - PERCENTAGE;
+  } else {
+    percentage = percentage - PERCENTAGE;
+  }
+
+  return percentage;
+};
+
+const normalizePercentage = (percentage) => {
+  if (percentage == Infinity) {
+    percentage = PERCENTAGE;
+  } else if (isNaN(percentage)) {
+    percentage = 0;
+  } else {
+    percentage = percentage.toFixed(2);
+  }
+
+  return percentage;
+};
+
 module.exports = {
   marketType,
   marketInput,
@@ -217,11 +239,14 @@ module.exports = {
       weekTwo.price = weekTwo.price / ids.length;
       weekOne.price = weekOne.price / ids.length;
 
-      let currentPercentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
-      let previousPercentage = ((weekTwo.price - weekThree.price) / weekThree.price) * PERCENTAGE;
+      let currentPercentage = (weekOne.price / weekTwo.price) * PERCENTAGE;
+      let previousPercentage = (weekTwo.price / weekThree.price) * PERCENTAGE;
 
-      currentPercentage = isFinite(currentPercentage) ? currentPercentage.toFixed(2) : 0;
-      previousPercentage = isFinite(previousPercentage) ? previousPercentage.toFixed(2) : 0;
+      currentPercentage = percentageDecision(currentPercentage);
+      previousPercentage = percentageDecision(previousPercentage);
+
+      currentPercentage = normalizePercentage(currentPercentage);
+      previousPercentage = normalizePercentage(previousPercentage);
 
       return {
         previousPrice: Math.round(weekTwo.price) || 0,
@@ -293,9 +318,9 @@ module.exports = {
       weekTwo.price = weekTwo.price / ids.length;
       weekOne.price = weekOne.price / ids.length;
 
-      let percentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
-
-      percentage = isFinite(percentage) ? percentage.toFixed(2) : 0;
+      let percentage = (weekOne.price / weekTwo.price) * PERCENTAGE;
+      percentage = percentageDecision(percentage);
+      percentage = normalizePercentage(percentage);
 
       const { 'price': nearbyPrice = 0 } = farmMarketNearbyResult.dataValues || {};
 
