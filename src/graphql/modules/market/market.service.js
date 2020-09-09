@@ -224,9 +224,9 @@ module.exports = {
       previousPercentage = isFinite(previousPercentage) ? previousPercentage.toFixed(2) : 0;
 
       return {
-        previousPrice: weekTwo.price || 0,
+        previousPrice: Math.round(weekTwo.price) || 0,
         previousPercentage: previousPercentage,
-        currentPrice: weekOne.price || 0,
+        currentPrice: Math.round(weekOne.price) || 0,
         currentPercentage: currentPercentage,
         data,
       };
