@@ -8,12 +8,6 @@ const { Market, Op, connection } = require('../../../database');
 const farmService = require('../farm/farm.service');
 const moment = require('moment');
 
-const currentDate = Date.now();
-const dateNowWeek = moment(currentDate).format(DATE_FORMAT);
-const dateOneWeekAgo = moment(new Date(currentDate - (1 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
-const dateTwoWeekAgo = moment(new Date(currentDate - (2 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
-const dateThreeWeekAgo = moment(new Date(currentDate - (3 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
-
 const marketType = new graphql.GraphQLObjectType({
   name: 'Market',
   fields: {
@@ -122,6 +116,12 @@ module.exports = {
     try {
       const ids = [0];
       const data = [];
+
+      const currentDate = Date.now();
+      const dateNowWeek = moment(currentDate).format(DATE_FORMAT);
+      const dateOneWeekAgo = moment(new Date(currentDate - (1 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
+      const dateTwoWeekAgo = moment(new Date(currentDate - (2 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
+      const dateThreeWeekAgo = moment(new Date(currentDate - (3 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
 
       points.map(({ id }) => ids.push(id.split('-')[1]));
 
@@ -239,6 +239,11 @@ module.exports = {
       const ids = [0];
 
       points.map(({ id }) => ids.push(id.split('-')[1]));
+
+      const currentDate = Date.now();
+      const dateNowWeek = moment(currentDate).format(DATE_FORMAT);
+      const dateOneWeekAgo = moment(new Date(currentDate - (1 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
+      const dateTwoWeekAgo = moment(new Date(currentDate - (2 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
 
       const farmMarketNearbyResult = await Market.findOne({
         attributes: ['price'],
