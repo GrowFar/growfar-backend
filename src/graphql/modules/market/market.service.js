@@ -270,15 +270,6 @@ module.exports = {
       const dateOneWeekAgo = moment(new Date(currentDate - (1 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
       const dateTwoWeekAgo = moment(new Date(currentDate - (2 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
 
-      const farmMarketNearbyResult = await Market.findOne({
-        attributes: ['price'],
-        where: {
-          farm_id: { [Op.$in]: ids },
-          commodity_id: { [Op.$eq]: commodity_id },
-        },
-        order: [['submit_at', 'desc']],
-      }) || {};
-
       const farmMarketResult = [{ price: 0 }, { price: 0 }];
 
       const priceResult = await connection.query(`
@@ -322,9 +313,10 @@ module.exports = {
       percentage = percentageDecision(percentage);
       percentage = normalizePercentage(percentage);
 
-      const { 'price': nearbyPrice = 0 } = farmMarketNearbyResult.dataValues || {};
-
-      return { nearbyPrice, percentage };
+      return {
+        nearbyPrice: Math.round(weekOne.price),
+        percentage,
+      };
     } catch (error) {
       throw new Error(error.message);
     }
