@@ -168,7 +168,7 @@ module.exports = {
       const farmMarketPriceResult = [{ price: 0 }, { price: 0 }, { price: 0 }];
 
       const priceResult = await connection.query(`
-        SELECT IFNULL(sum(m2.price), 0) AS price
+        SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 3) AS idx
         FROM Market m2
         INNER JOIN (
           SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
@@ -180,7 +180,7 @@ module.exports = {
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
         UNION
-        SELECT IFNULL(sum(m2.price), 0) AS price
+        SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 2) AS idx
         FROM Market m2
         INNER JOIN (
           SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
@@ -192,7 +192,7 @@ module.exports = {
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
         UNION
-        SELECT IFNULL(sum(m2.price), 0) AS price
+        SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 1) AS idx
         FROM Market m2
         INNER JOIN (
           SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
@@ -206,7 +206,7 @@ module.exports = {
         AND m2.submit_at = latest_market.submit_at
       `, { type: QueryTypes.SELECT });
 
-      priceResult.map(({ price }, idx) => {
+      priceResult.map(({ price, idx }) => {
         price = parseInt(price);
         farmMarketPriceResult[idx].price = !price ? 0 : price;
       });
@@ -257,7 +257,7 @@ module.exports = {
       const farmMarketResult = [{ price: 0 }, { price: 0 }];
 
       const priceResult = await connection.query(`
-        SELECT sum(m2.price) AS price
+        SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 2) AS idx
         FROM Market m2
         INNER JOIN (
           SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
@@ -269,7 +269,7 @@ module.exports = {
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
         UNION
-        SELECT sum(m2.price) AS price
+        SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 1) AS idx
         FROM Market m2
         INNER JOIN (
           SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
@@ -283,7 +283,7 @@ module.exports = {
         AND m2.submit_at = latest_market.submit_at
       `, { type: QueryTypes.SELECT }) || {};
 
-      priceResult.map(({ price }, idx) => {
+      priceResult.map(({ price, idx }) => {
         price = parseInt(price);
         farmMarketResult[idx].price = !price ? 0 : price;
       });
