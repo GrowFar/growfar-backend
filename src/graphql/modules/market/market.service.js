@@ -213,9 +213,9 @@ module.exports = {
 
       const [weekThree, weekTwo, weekOne] = farmMarketPriceResult;
 
-      weekThree.price = weekThree.price || 0 / ids.length;
-      weekTwo.price = weekTwo.price || 0 / ids.length;
-      weekOne.price = weekOne.price || 0 / ids.length;
+      weekThree.price = weekThree.price / ids.length;
+      weekTwo.price = weekTwo.price / ids.length;
+      weekOne.price = weekOne.price / ids.length;
 
       let currentPercentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
       let previousPercentage = ((weekTwo.price - weekThree.price) / weekThree.price) * PERCENTAGE;
