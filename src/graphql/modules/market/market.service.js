@@ -211,7 +211,7 @@ module.exports = {
         farmMarketPriceResult[idx].price = !price ? 0 : price;
       });
 
-      const [weekThree, weekTwo, weekOne] = farmMarketPriceResult;
+      const [weekOne, weekTwo, weekThree] = farmMarketPriceResult;
 
       weekThree.price = weekThree.price / ids.length;
       weekTwo.price = weekTwo.price / ids.length;
@@ -288,10 +288,10 @@ module.exports = {
         farmMarketResult[idx].price = !price ? 0 : price;
       });
 
-      const [weekTwo, weekOne] = farmMarketResult;
+      const [weekOne, weekTwo] = farmMarketResult;
 
-      weekTwo.price = weekTwo.price || 0 / ids.length;
-      weekOne.price = weekOne.price || 0 / ids.length;
+      weekTwo.price = weekTwo.price / ids.length;
+      weekOne.price = weekOne.price / ids.length;
 
       let percentage = ((weekOne.price - weekTwo.price) / weekTwo.price) * PERCENTAGE;
 
