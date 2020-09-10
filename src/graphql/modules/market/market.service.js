@@ -88,6 +88,8 @@ const normalizePercentage = (percentage) => {
   return percentage;
 };
 
+const normalizePrice = (price) => isNaN(price) ? 0 : price;
+
 module.exports = {
   marketType,
   marketInput,
@@ -163,6 +165,7 @@ module.exports = {
         WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
       `, { type: QueryTypes.SELECT }) || {};
 
       farmMarketDataResult.map(res => {
@@ -201,6 +204,7 @@ module.exports = {
           WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
         UNION
         SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 1) AS idx
         FROM Market m2
@@ -213,6 +217,7 @@ module.exports = {
           WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
         UNION
         SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 0) AS idx
         FROM Market m2
@@ -226,6 +231,7 @@ module.exports = {
         WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
       `, { type: QueryTypes.SELECT });
 
       priceResult.map(({ price, idx }) => {
@@ -235,9 +241,13 @@ module.exports = {
 
       const [weekOne, weekTwo, weekThree] = farmMarketPriceResult;
 
-      weekThree.price = weekThree.price / ids.length;
-      weekTwo.price = weekTwo.price / ids.length;
-      weekOne.price = weekOne.price / ids.length;
+      weekThree.price = weekThree.price / data.length;
+      weekTwo.price = weekTwo.price / data.length;
+      weekOne.price = weekOne.price / data.length;
+
+      weekThree.price = normalizePrice(weekThree.price);
+      weekTwo.price = normalizePrice(weekTwo.price);
+      weekOne.price = normalizePrice(weekOne.price);
 
       let currentPercentage = (weekOne.price / weekTwo.price) * PERCENTAGE;
       let previousPercentage = (weekTwo.price / weekThree.price) * PERCENTAGE;
@@ -270,6 +280,24 @@ module.exports = {
       const dateOneWeekAgo = moment(new Date(currentDate - (1 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
       const dateTwoWeekAgo = moment(new Date(currentDate - (2 * WEEK_IN_MILLIS))).format(DATE_FORMAT);
 
+      const farmMarketDataResult = await connection.query(`
+        SELECT IFNULL(COUNT(m2.id), 0) as total
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          ON m2.farm_id = latest_market.farm_id
+        WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
+      `, { type: QueryTypes.SELECT }) || {};
+
+      console.log(farmMarketDataResult);
+
       const farmMarketResult = [{ price: 0 }, { price: 0 }];
 
       const priceResult = await connection.query(`
@@ -284,6 +312,7 @@ module.exports = {
           WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
         UNION
         SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 0) AS idx
         FROM Market m2
@@ -297,17 +326,24 @@ module.exports = {
         WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
       `, { type: QueryTypes.SELECT }) || {};
+
+      console.log(priceResult);
 
       priceResult.map(({ price, idx }) => {
         price = parseInt(price);
         farmMarketResult[idx].price = !price ? 0 : price;
       });
 
+      const [countResult] = farmMarketDataResult;
       const [weekOne, weekTwo] = farmMarketResult;
 
-      weekTwo.price = weekTwo.price / ids.length;
-      weekOne.price = weekOne.price / ids.length;
+      weekTwo.price = weekTwo.price / countResult.total;
+      weekOne.price = weekOne.price / countResult.total;
+
+      weekTwo.price = normalizePrice(weekTwo.price);
+      weekOne.price = normalizePrice(weekOne.price);
 
       let percentage = (weekOne.price / weekTwo.price) * PERCENTAGE;
       percentage = percentageDecision(percentage);
