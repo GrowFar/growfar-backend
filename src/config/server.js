@@ -7,4 +7,22 @@ const USER_ROLE = {
   WORKER: 'WORKER',
 };
 
-module.exports = { ...process.env, USER_ROLE };
+const APP_TIMEZONE = 'Asia/Jakarta';
+
+const SCHEDULER_LIST = {
+  SCHEDULER_MARKET_PRICE: {
+    message: 'Executing market price insert every midnight',
+    value: '0 0 * * *',
+  },
+  SCHEDULER_NOTIFICATION: {
+    message: 'Executing notification for ...',
+    value: '* * * * *',
+  },
+};
+
+module.exports = {
+  ...process.env,
+  USER_ROLE,
+  SCHEDULER_LIST,
+  APP_TIMEZONE,
+};

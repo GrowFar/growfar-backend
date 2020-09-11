@@ -97,6 +97,27 @@ module.exports = {
   farmMarketAllType,
   marketPriceReportType,
   marketPriceCommodityType,
+  insertLatestMarketPrice: async () => {
+    try {
+      const result = await connection.query(`
+        INSERT INTO Market (farm_id, commodity_id, price, submit_at, created_at, updated_at)
+        SELECT m2.farm_id, m2.commodity_id, m2.price, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+        FROM Market m2
+        INNER JOIN (
+          SELECT max(id) AS id, farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+          ON m2.farm_id = latest_market.farm_id
+        WHERE m2.submit_at = latest_market.submit_at
+        AND m2.id = latest_market.id
+        AND m2.price > 0
+      `, { type: QueryTypes.INSERT });
+      return result;
+    }
+    catch (error) {
+      return error;
+    }
+  },
   insertNewMarket: async (market) => {
     try {
       const result = await Market.create(market);

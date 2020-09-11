@@ -1,6 +1,9 @@
 FROM node
 
+RUN rm -f /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+
 RUN mkdir -p /usr/src/grofar-backend
+
 WORKDIR /usr/src/grofar-backend
 
 COPY package*.json ./

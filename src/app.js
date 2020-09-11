@@ -10,7 +10,10 @@ const { flushDb } = require('./tile38');
 
 const { SERVER_PORT, NODE_ENV, AUTH_TOKEN } = require('./config');
 const { notFound, errorHandler } = require('./middlewares');
+
 const graphqlSchema = require('./graphql/schema');
+
+require('./cron');
 
 if (NODE_ENV !== 'production') {
   require('longjohn').async_trace_limit = -1;
