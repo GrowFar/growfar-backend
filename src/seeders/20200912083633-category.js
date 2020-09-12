@@ -5,10 +5,12 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     const currentData = [
       {
+        id: '1',
         name: 'Telur',
         description: 'Ini adalah kategori telur',
       },
       {
+        id: '2',
         name: 'Susu',
         description: 'Ini adalah kategori susu',
       },
