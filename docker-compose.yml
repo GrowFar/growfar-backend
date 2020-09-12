@@ -2,8 +2,10 @@ version: "3.6"
 
 services:
   db:
-    image: mysql:8.0
     container_name: growfar_db
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
     volumes:
       - "db_data:$HOME/$DB_PATH"
     environment:
@@ -12,6 +14,7 @@ services:
       MYSQL_DATABASE: $DB_NAME
       MYSQL_USER: $DB_USER
       MYSQL_PASSWORD: $DB_PASS
+      TZ: "Asia/Jakarta"
     restart: unless-stopped
     env_file:
       - .env

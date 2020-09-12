@@ -5,6 +5,7 @@ const USER_ROLE = {
 };
 
 const APP_TIMEZONE = 'Asia/Jakarta';
+const APP_LOCALES = 'en-US';
 
 const SCHEDULER_LIST = {
   SCHEDULER_MARKET_PRICE: {
@@ -22,4 +23,5 @@ module.exports = {
   USER_ROLE,
   SCHEDULER_LIST,
   APP_TIMEZONE,
+  APP_LOCALES,
 };

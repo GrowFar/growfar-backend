@@ -99,9 +99,12 @@ module.exports = {
   marketPriceCommodityType,
   insertLatestMarketPrice: async () => {
     try {
+      const currentDate = new Date();
+      const dateNowWeek = moment(currentDate).format(DATE_FORMAT);
+
       const result = await connection.query(`
         INSERT INTO Market (farm_id, commodity_id, price, submit_at, created_at, updated_at)
-        SELECT m2.farm_id, m2.commodity_id, m2.price, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
+        SELECT m2.farm_id, m2.commodity_id, m2.price, '${dateNowWeek}', '${dateNowWeek}', '${dateNowWeek}'
         FROM Market m2
         INNER JOIN (
           SELECT max(id) AS id, farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
@@ -109,7 +112,6 @@ module.exports = {
           ) AS latest_market
           ON m2.farm_id = latest_market.farm_id
         WHERE m2.submit_at = latest_market.submit_at
-        AND m2.id = latest_market.id
         AND m2.price > 0
       `, { type: QueryTypes.INSERT });
       return result;
@@ -180,12 +182,11 @@ module.exports = {
           AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
           GROUP BY farm_id, commodity_id
           ) AS latest_market
-          ON m2.farm_id = latest_market.farm_id
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
         JOIN Farm f ON f.id = m2.farm_id
         JOIN User u ON u.id = f.user_id
         WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
-        AND m2.submit_at = latest_market.submit_at
         AND m2.price > 0
       `, { type: QueryTypes.SELECT }) || {};
 
@@ -222,7 +223,8 @@ module.exports = {
           AND submit_at BETWEEN '${dateThreeWeekAgo}' AND '${dateTwoWeekAgo}'
           GROUP BY farm_id, commodity_id
           ) AS latest_market
-          WHERE m2.farm_id IN (${ids})
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
+        WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
         AND m2.price > 0
@@ -235,7 +237,8 @@ module.exports = {
           AND submit_at BETWEEN '${dateTwoWeekAgo}' AND '${dateOneWeekAgo}'
           GROUP BY farm_id, commodity_id
           ) AS latest_market
-          WHERE m2.farm_id IN (${ids})
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
+        WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
         AND m2.price > 0
@@ -248,7 +251,7 @@ module.exports = {
           AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
           GROUP BY farm_id, commodity_id
           ) AS latest_market
-          ON m2.farm_id = latest_market.farm_id
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
         WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
@@ -330,7 +333,8 @@ module.exports = {
           AND submit_at BETWEEN '${dateTwoWeekAgo}' AND '${dateOneWeekAgo}'
           GROUP BY farm_id, commodity_id
           ) AS latest_market
-          WHERE m2.farm_id IN (${ids})
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
+        WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
         AND m2.price > 0
@@ -343,7 +347,7 @@ module.exports = {
           AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
           GROUP BY farm_id, commodity_id
           ) AS latest_market
-          ON m2.farm_id = latest_market.farm_id
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
         WHERE m2.farm_id IN (${ids})
         AND m2.commodity_id = ${commodity_id}
         AND m2.submit_at = latest_market.submit_at
