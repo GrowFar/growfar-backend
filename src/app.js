@@ -37,7 +37,7 @@ app.use('/graphql', express.json(), graphqlHTTP((req, res, params) => ({
   },
 })));
 
-app.get('/seeding', async (req, res, next) => {
+app.get('/reset', async (req, res, next) => {
   try {
 
     if (NODE_ENV === 'development') {

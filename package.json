@@ -5,9 +5,11 @@
   "main": "src/app.js",
   "private": true,
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "debug": "cross-env NODE_ENV=development nodemon --inspect src/app.js",
+    "start": "node -r dotenv/config src/app.js",
+    "dev": "nodemon -r dotenv/config src/app.js",
+    "seed": "sequelize db:seed:all",
+    "seed:undo": "sequelize db:seed:undo:all",
+    "debug": "cross-env NODE_ENV=development nodemon -r dotenv/config --inspect src/app.js",
     "profile:dev": "bash ./scripts/profiling.sh development",
     "profile:prod": "bash ./scripts/profiling.sh production",
     "lint": "eslint ."

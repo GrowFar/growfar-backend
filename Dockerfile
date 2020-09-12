@@ -10,6 +10,8 @@ COPY package*.json ./
 
 RUN npm install
 
+RUN npm install -g sequelize-cli
+
 COPY . .
 
 CMD ./scripts/wait-for.sh db:3306 -- npm start

@@ -5,25 +5,16 @@
     "es6": true
   },
   "parserOptions": {
-    "ecmaVersion": 2019
+    "ecmaVersion": 2019,
+    "sourceType": "module"
   },
   "rules": {
     "semi": "error",
-    "comma-dangle": [
-      "error",
-      "always-multiline"
-    ],
+    "comma-dangle": ["error", "always-multiline"],
     "comma-spacing": "error",
     "comma-style": "error",
-    "curly": [
-      "error",
-      "multi-line",
-      "consistent"
-    ],
-    "dot-location": [
-      "error",
-      "property"
-    ],
+    "curly": ["error", "multi-line", "consistent"],
+    "dot-location": ["error", "property"],
     "handle-callback-err": "off",
     "max-nested-callbacks": [
       "error",
@@ -54,27 +45,15 @@
     "no-shadow": [
       "error",
       {
-        "allow": [
-          "err",
-          "resolve",
-          "reject"
-        ]
+        "allow": ["err", "resolve", "reject"]
       }
     ],
     "no-useless-escape": "warn",
-    "no-trailing-spaces": [
-      "error"
-    ],
+    "no-trailing-spaces": ["error"],
     "no-var": "error",
-    "object-curly-spacing": [
-      "error",
-      "always"
-    ],
+    "object-curly-spacing": ["error", "always"],
     "prefer-const": "error",
-    "quotes": [
-      "error",
-      "single"
-    ],
+    "quotes": ["error", "single"],
     "space-before-blocks": "error",
     "space-before-function-paren": [
       "error",
@@ -89,17 +68,21 @@
     "space-unary-ops": "error",
     "spaced-comment": "error",
     "yoda": "error",
-    "prefer-destructuring": ["error", {
-      "VariableDeclarator": {
-        "array": true,
-        "object": true
+    "prefer-destructuring": [
+      "error",
+      {
+        "VariableDeclarator": {
+          "array": true,
+          "object": true
+        },
+        "AssignmentExpression": {
+          "array": true,
+          "object": true
+        }
       },
-      "AssignmentExpression": {
-        "array": true,
-        "object": true
+      {
+        "enforceForRenamedProperties": false
       }
-    }, {
-      "enforceForRenamedProperties": false
-    }]
+    ]
   }
 }

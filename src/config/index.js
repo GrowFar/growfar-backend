@@ -1,5 +1,5 @@
 module.exports = {
   ...require('./server'),
-  ...require('./sequelize'),
+  ...require('./database'),
   ...require('./tile38'),
 };
