@@ -4,6 +4,18 @@ const USER_ROLE = {
   WORKER: 'WORKER',
 };
 
+const PERMIT_CATEGORY = {
+  SICK: 'SICK',
+  EVENT: 'EVENT',
+  OTHERS: 'OTHERS',
+};
+
+const NOTIFICATION_TYPE = {
+  TASK: 'TASK',
+  ATTENDANCE: 'ATTENDANCE',
+  ABSENT: 'ABSENT',
+};
+
 const APP_TIMEZONE = 'Asia/Jakarta';
 const APP_LOCALES = 'en-US';
 
@@ -24,4 +36,6 @@ module.exports = {
   SCHEDULER_LIST,
   APP_TIMEZONE,
   APP_LOCALES,
+  PERMIT_CATEGORY,
+  NOTIFICATION_TYPE,
 };

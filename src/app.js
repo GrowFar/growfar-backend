@@ -45,7 +45,7 @@ app.get('/reset', async (req, res, next) => {
       await flushDb();
     }
 
-    res.status(200).json({ message: 'Seeding successfully' });
+    res.status(200).json({ message: 'Reset successfully' });
   } catch (error) {
     next(error);
   }
