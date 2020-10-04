@@ -101,4 +101,11 @@ module.exports = {
   Farm,
   Market,
   User,
+  FarmWorker,
+  WorkerPermit,
+  WorkerRegistration,
+  WorkerTask,
+  WorkerTaskDiscussion,
+  WorkerTaskDone,
+  Notification,
 };

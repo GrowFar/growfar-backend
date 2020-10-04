@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     underscored: true,
     timestamps: true,
     freezeTableName: true,
+    paranoid: true,
   });
 
   return FarmWorker;

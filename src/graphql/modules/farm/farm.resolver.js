@@ -46,4 +46,21 @@ module.exports = {
       }
     },
   },
+  findFarmLocationWorker: {
+    type: graphql.GraphQLList(farmService.farmLocationWorker),
+    args: {
+      longitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
+      latitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
+      radius: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
+    },
+    resolve: async (_, { longitude, latitude, radius }) => {
+      try {
+        const { points } = await farmService.getFarmNearby(longitude, latitude, radius);
+        const farmResult = await farmService.getFarmDataWorkerNearby(points);
+        return farmResult;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
 };
