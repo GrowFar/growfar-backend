@@ -1,9 +1,11 @@
 const graphql = require('graphql');
 const moment = require('moment');
 
+const { QueryTypes } = require('sequelize');
+
 const ErrorMessage = require('../../constant-error');
 const { TILE_KEY_FARM, TILE_RADIUS, CHARACTERS, FARM_TOKEN_LENGTH } = require('../../constant-value');
-const { Farm, User, Op, Market, Commodity, WorkerRegistration, FarmWorker } = require('../../../database');
+const { connection, Farm, User, Op, Market, Commodity, WorkerRegistration, FarmWorker, WorkerTask, WorkerTaskDone } = require('../../../database');
 const { userType } = require('../user/user.service');
 const { tileClient } = require('../../../tile38');
 
@@ -94,6 +96,37 @@ const farmWorkerType = new graphql.GraphQLObjectType({
   },
 });
 
+const farmWorkerTask = new graphql.GraphQLObjectType({
+  name: 'FarmWorkerTask',
+  fields: {
+    id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    title: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    started_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    ended_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+  },
+});
+
+const farmWorkerTaskInput = new graphql.GraphQLInputObjectType({
+  name: 'FarmWorkerTaskInput',
+  fields: {
+    title: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    started_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    ended_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+  },
+});
+
+const farmWorkerTaskDone = new graphql.GraphQLObjectType({
+  name: 'FarmWorkerTaskDone',
+  fields: {
+    id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    user: { type: graphql.GraphQLNonNull(userType) },
+    worker_task: { type: graphql.GraphQLNonNull(farmWorkerTask) },
+    submit_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+  },
+});
+
 module.exports = {
   farmType,
   farmShortType,
@@ -104,6 +137,9 @@ module.exports = {
   farmCommodities,
   farmGeneratedToken,
   farmWorkerType,
+  farmWorkerTask,
+  farmWorkerTaskInput,
+  farmWorkerTaskDone,
   generateFarmToken: () => {
     let result = '';
 
@@ -186,6 +222,65 @@ module.exports = {
     try {
       const result = await FarmWorker.create(farmWorker);
       return result.dataValues.id;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  insertFarmWorkerTask: async (workerTask) => {
+    try {
+      const result = await WorkerTask.bulkCreate(workerTask);
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  insertFarmWorkerTaskOnDone: async (workerTaskDone) => {
+    try {
+      const result = await WorkerTaskDone.create(workerTaskDone);
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  deleteFarmWorkerTask: async (farm_id, task_id) => {
+    try {
+      const result = await WorkerTask.destroy({
+        where: {
+          id: { [Op.$eq]: task_id },
+          farm_id: { [Op.$eq]: farm_id },
+        },
+      });
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getFarmWorkerTaskById: async (task_id) => {
+    try {
+      const result = await WorkerTask.findOne({
+        where: {
+          id: { [Op.$eq]: task_id },
+        },
+      });
+
+      if (!result) throw new Error(ErrorMessage.WORKER_TASK_NOT_FOUND);
+      return result.dataValues;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getFarmWorkerTaskByFarmId: async (farm_id) => {
+    try {
+      const result = [];
+      const workerTaskResult = await WorkerTask.findAll({
+        where: {
+          farm_id: { [Op.$eq]: farm_id },
+        },
+      });
+
+      workerTaskResult.map(res => result.push(res));
+
+      return result;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -316,6 +411,23 @@ module.exports = {
       });
 
       if (result) throw new Error(ErrorMessage.WORKER_ALREADY_REGISTERED);
+      return null;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  validateFarmWorkerTaskOnDone: async (user_id, worker_task_id) => {
+    try {
+      const currentDate = moment(new Date()).format('YYYY-MM-DD');
+      const [result] = await connection.query(`
+        SELECT * FROM Worker_Task_Done wtd
+        WHERE user_id = ${user_id}
+        AND worker_task_id = ${worker_task_id}
+        AND date(created_at) = '${currentDate}'
+        LIMIT 1
+      `, { type: QueryTypes.SELECT }) || {};
+
+      if (result) throw new Error(ErrorMessage.WORKER_TASK_DONE);
       return null;
     } catch (error) {
       throw new Error(error.message);

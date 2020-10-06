@@ -10,4 +10,6 @@ module.exports = {
   WORKER_REGISTRATION_NOT_FOUND: 'Token is not valid',
   WORKER_REGISTRATION_IS_AT_DURATION: 'Token already generated, please wait',
   WORKER_ALREADY_REGISTERED: 'Worker already registered',
+  WORKER_TASK_NOT_FOUND: 'Worker task is not found',
+  WORKER_TASK_DONE: 'Worker task is already done',
 };

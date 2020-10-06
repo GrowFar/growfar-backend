@@ -2,9 +2,9 @@
 
 module.exports = (sequelize, DataTypes) => {
   const WorkerTaskDone = sequelize.define('Worker_Task_Done', {
-    submitAt: {
-      type: DataTypes.DATE,
-      defaultValue: sequelize.fn('NOW'),
+    submit_at: {
+      type: DataTypes.TIME,
+      allowNull: false,
     },
   }, {
     underscored: true,

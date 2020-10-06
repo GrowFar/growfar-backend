@@ -70,8 +70,8 @@ WorkerTask.hasMany(WorkerTaskDiscussion, { foreignKey: { name: 'worker_task_id',
 WorkerTaskDiscussion.belongsTo(WorkerTask, { foreignKey: { name: 'worker_task_id', allowNull: false } });
 
 // 1:1
-WorkerTask.hasOne(WorkerTask, { foreignKey: { name: 'worker_task_discussion_parent_id', allowNull: false } });
-WorkerTask.belongsTo(WorkerTask, { foreignKey: { name: 'worker_task_discussion_parent_id', allowNull: false } });
+WorkerTaskDiscussion.hasOne(WorkerTaskDiscussion, { foreignKey: { name: 'worker_task_discussion_parent_id', allowNull: false } });
+WorkerTaskDiscussion.belongsTo(WorkerTaskDiscussion, { foreignKey: { name: 'worker_task_discussion_parent_id', allowNull: false } });
 
 // M:N
 User.hasMany(WorkerTaskDone, { foreignKey: { name: 'user_id', allowNull: false } });

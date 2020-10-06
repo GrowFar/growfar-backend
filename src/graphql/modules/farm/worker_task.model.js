@@ -9,16 +9,19 @@ module.exports = (sequelize, DataTypes) => {
     description: {
       type: DataTypes.STRING(255),
     },
-    startedAt: {
-      type: DataTypes.DATE,
+    started_at: {
+      type: DataTypes.TIME,
+      allowNull: false,
     },
-    endedAt: {
-      type: DataTypes.DATE,
+    ended_at: {
+      type: DataTypes.TIME,
+      allowNull: false,
     },
   }, {
     underscored: true,
     timestamps: true,
     freezeTableName: true,
+    paranoid: true,
   });
 
   return WorkerTask;
