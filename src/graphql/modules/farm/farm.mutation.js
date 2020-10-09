@@ -103,18 +103,17 @@ module.exports = {
   registerNewWorker: {
     type: farmService.farmWorkerType,
     args: {
-      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
       user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
       invitation_code: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
     },
-    resolve: async (_, { farm_id, user_id, invitation_code }) => {
+    resolve: async (_, { user_id, invitation_code }) => {
       try {
-        const farmWorker = new FarmWorker(farm_id, user_id, invitation_code);
         const user = await userService.getUserById(user_id);
-        await farmService.validateRegisteredWorker(farm_id, user_id);
-        await farmService.validateFarmGeneratedToken(farm_id, invitation_code);
+        const workerRegistration = await farmService.getWorkerRegistrationByToken(invitation_code);
+        const farmWorker = new FarmWorker(workerRegistration.farm_id, user_id, invitation_code);
+        await farmService.validateRegisteredWorker(workerRegistration.farm_id, user_id);
         await farmService.insertNewWorker(farmWorker);
-        return { farm_id, user };
+        return { farm_id: workerRegistration.farm_id, user };
       } catch (error) {
         throw new Error(error.message);
       }

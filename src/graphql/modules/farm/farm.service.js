@@ -381,6 +381,18 @@ module.exports = {
       throw new Error(error.message);
     }
   },
+  getWorkerRegistrationByToken: async (token) => {
+    const result = await WorkerRegistration.findOne({
+      where: {
+        generated_token: { [Op.$eq]: token },
+        ended_at: { [Op.$gt]: moment(new Date()).format() },
+      },
+      order: [['ended_at', 'DESC']],
+    });
+
+    if (!result) throw new Error(ErrorMessage.WORKER_REGISTRATION_NOT_FOUND);
+    return result.dataValues;
+  },
   validateFarmTokenDuration: async (farmId) => {
     try {
       const result = await WorkerRegistration.findOne({
@@ -420,7 +432,6 @@ module.exports = {
         where: {
           farm_id: { [Op.$eq]: farm_id },
           user_id: { [Op.$eq]: user_id },
-          deleted_at: { [Op.$ne]: null },
         },
       });
 
