@@ -89,4 +89,24 @@ module.exports = {
       }
     },
   },
+  findFarmByWorkerId: {
+    type: farmService.farmType,
+    args: {
+      user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    },
+    resolve: async (_, { user_id }) => {
+      try {
+        const farmWorkerData = await farmService.getFarmWorkerByUserId(user_id);
+        if (!farmWorkerData) {
+          return null;
+        }
+
+        const farm = await farmService.getFarmById(farmWorkerData.farm_id);
+        const user = await userService.getUserById(farm.user_id);
+        return { ...farm, user };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
 };

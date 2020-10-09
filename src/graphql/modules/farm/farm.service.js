@@ -287,6 +287,16 @@ module.exports = {
       throw new Error(error.message);
     }
   },
+  getFarmWorkerByUserId: async (user_id) => {
+    try {
+      const result = await FarmWorker.findOne({
+        where: { user_id: { [Op.$eq]: user_id } },
+      });
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
   getFarmNearby: async (longitude, latitude, radius) => {
     try {
       const kmRadius = (radius * TILE_RADIUS);
