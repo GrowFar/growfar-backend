@@ -64,6 +64,8 @@ const farmLocationWorker = new graphql.GraphQLObjectType({
   name: 'FarmLocationWorker',
   fields: {
     farm: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    longitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
+    latitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
     owner: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     phone: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     commodity: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
@@ -337,7 +339,7 @@ module.exports = {
         group: ['farm_id', 'commodity_id', 'Farm.User.phone'],
         include: [
           {
-            attributes: [['name', 'farm']],
+            attributes: [['name', 'farm'], 'longitude', 'latitude'],
             model: Farm,
             include: {
               attributes: [['fullname', 'owner'], ['phone', 'phone']],
@@ -354,6 +356,8 @@ module.exports = {
       farmResult.map(res => {
         const farm = {
           farm: res.Farm.dataValues.farm,
+          longitude: res.Farm.dataValues.longitude,
+          latitude: res.Farm.dataValues.latitude,
           owner: res.Farm.dataValues.User.dataValues.owner,
           phone: res.Farm.dataValues.User.dataValues.phone,
           commodity: res.Commodity.dataValues.commodity,
