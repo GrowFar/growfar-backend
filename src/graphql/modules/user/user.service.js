@@ -53,6 +53,23 @@ module.exports = {
       throw new Error(error.message);
     }
   },
+  getUserByIds: async (ids) => {
+    try {
+      const result = await User.findAll({
+        attributes: ['id', 'uid', 'fullname', 'phone', 'role'],
+        where: { id: { [Op.$in]: ids } },
+        raw: true,
+      });
+
+      if (!result) {
+        return null;
+      }
+
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
   getUserByPhone: async (phone) => {
     try {
       const result = await User.findOne({

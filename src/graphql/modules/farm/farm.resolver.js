@@ -2,6 +2,8 @@ const graphql = require('graphql');
 const farmService = require('./farm.service');
 const userService = require('../user/user.service');
 
+const Pagination = require('../../../utils/pagination');
+
 module.exports = {
   findFarmById: {
     type: farmService.farmType,
@@ -104,6 +106,24 @@ module.exports = {
         const farm = await farmService.getFarmById(farmWorkerData.farm_id);
         const user = await userService.getUserById(farm.user_id);
         return { ...farm, user };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
+  findFarmWorker: {
+    type: farmService.farmWorkerListType,
+    args: {
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      limit: { type: graphql.GraphQLInt },
+      page: { type: graphql.GraphQLInt },
+    },
+    resolve: async (_, { farm_id, limit, page }) => {
+      try {
+        const pagination = new Pagination(limit, page);
+        const ids = await farmService.getFarmWorkerIdByFarmId(farm_id, pagination);
+        const users = await userService.getUserByIds(ids);
+        return { farm_id, users };
       } catch (error) {
         throw new Error(error.message);
       }

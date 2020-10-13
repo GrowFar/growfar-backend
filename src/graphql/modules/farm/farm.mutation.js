@@ -6,6 +6,7 @@ const moment = require('moment');
 const WorkerRegistration = require('./worker_registration');
 const WorkerTaskDone = require('./worker_task_done');
 const FarmWorker = require('./farm_worker');
+const FarmWorkerPermit = require('./farm_worker_permit');
 const WorkerTask = require('./worker_task');
 const Farm = require('./farm');
 
@@ -78,6 +79,33 @@ module.exports = {
         const workerTask = await farmService.getFarmWorkerTaskById(worker_task_id);
         const workerTaskDoneResult = await farmService.insertFarmWorkerTaskOnDone(workerTaskDone);
         return { id: workerTaskDoneResult.id, user, worker_task: workerTask, submit_at: workerTaskDoneResult.submit_at };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
+  createFarmWorkerPermit: {
+    type: farmService.farmWorkerPermitType,
+    args: {
+      workerPermitInput: { type: graphql.GraphQLNonNull(farmService.farmWorkerPermitInput) },
+    },
+    resolve: async (_, { workerPermitInput }) => {
+      try {
+        const farmWorkerPermit = new FarmWorkerPermit(
+          workerPermitInput.category,
+          workerPermitInput.description,
+          workerPermitInput.duration,
+          workerPermitInput.farm_id,
+          workerPermitInput.user_id,
+        );
+
+        const farm = await farmService.getFarmById(workerPermitInput.farm_id);
+        const user = await userService.getUserById(workerPermitInput.user_id);
+        const id = await farmService.insertNewWorkerPermit(farmWorkerPermit);
+        const permit = await farmService.getFarmWorkerPermitById(id);
+        farm.user = user;
+
+        return { ...permit, farm };
       } catch (error) {
         throw new Error(error.message);
       }

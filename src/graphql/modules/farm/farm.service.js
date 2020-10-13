@@ -1,13 +1,27 @@
 const graphql = require('graphql');
 const moment = require('moment');
+const _ = require('lodash');
 
 const { QueryTypes } = require('sequelize');
 
 const ErrorMessage = require('../../constant-error');
 const { TILE_KEY_FARM, TILE_RADIUS, CHARACTERS, FARM_TOKEN_LENGTH } = require('../../constant-value');
-const { connection, Farm, User, Op, Market, Commodity, WorkerRegistration, FarmWorker, WorkerTask, WorkerTaskDone } = require('../../../database');
+const { connection, Farm, User, Op, Market, Commodity, WorkerRegistration, FarmWorker, WorkerTask, WorkerTaskDone, WorkerPermit } = require('../../../database');
 const { userType } = require('../user/user.service');
 const { tileClient } = require('../../../tile38');
+
+const { PERMIT_CATEGORY } = require('../../../config');
+
+const WORKER_PERMIT_CATEGORY = _.assign({}, ...Object.keys(PERMIT_CATEGORY).map(key => {
+  const result = {};
+  result[key] = { value: key };
+  return result;
+}));
+
+const workerPermitEnum = new graphql.GraphQLEnumType({
+  name: 'WorkerPermit',
+  values: WORKER_PERMIT_CATEGORY,
+});
 
 const farmType = new graphql.GraphQLObjectType({
   name: 'Farm',
@@ -98,6 +112,14 @@ const farmWorkerType = new graphql.GraphQLObjectType({
   },
 });
 
+const farmWorkerListType = new graphql.GraphQLObjectType({
+  name: 'FarmWorkerList',
+  fields: {
+    farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
+    users: { type: graphql.GraphQLList(userType) },
+  },
+});
+
 const farmWorkerTask = new graphql.GraphQLObjectType({
   name: 'FarmWorkerTask',
   fields: {
@@ -129,6 +151,29 @@ const farmWorkerTaskDone = new graphql.GraphQLObjectType({
   },
 });
 
+const farmWorkerPermitType = new graphql.GraphQLObjectType({
+  name: 'FarmWorkerPermit',
+  fields: {
+    id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    category: { type: graphql.GraphQLNonNull(workerPermitEnum) },
+    description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    duration: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
+    is_allowed: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
+    farm: { type: graphql.GraphQLNonNull(farmType) },
+  },
+});
+
+const farmWorkerPermitInput = new graphql.GraphQLInputObjectType({
+  name: 'FarmWorkerPermitInput',
+  fields: {
+    category: { type: graphql.GraphQLNonNull(workerPermitEnum) },
+    description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    duration: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
+    farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+  },
+});
+
 module.exports = {
   farmType,
   farmShortType,
@@ -139,9 +184,12 @@ module.exports = {
   farmCommodities,
   farmGeneratedToken,
   farmWorkerType,
+  farmWorkerListType,
   farmWorkerTask,
   farmWorkerTaskInput,
   farmWorkerTaskDone,
+  farmWorkerPermitType,
+  farmWorkerPermitInput,
   generateFarmToken: () => {
     let result = '';
 
@@ -240,6 +288,14 @@ module.exports = {
     try {
       const result = await WorkerTaskDone.create(workerTaskDone);
       return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  insertNewWorkerPermit: async (farmWorkerPermit) => {
+    try {
+      const result = await WorkerPermit.create(farmWorkerPermit);
+      return result.dataValues.id;
     } catch (error) {
       throw new Error(error.message);
     }
@@ -392,6 +448,38 @@ module.exports = {
 
     if (!result) throw new Error(ErrorMessage.WORKER_REGISTRATION_NOT_FOUND);
     return result.dataValues;
+  },
+  getFarmWorkerIdByFarmId: async (farm_id, pagination) => {
+    try {
+      const result = [];
+      const { limit, offset } = pagination;
+      const workerResult = await FarmWorker.findAll({
+        offset: offset,
+        limit: limit,
+        where: {
+          farm_id: { [Op.$eq]: farm_id },
+        },
+      });
+
+      workerResult.map(res => result.push(res.user_id));
+
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  getFarmWorkerPermitById: async (permitId) => {
+    try {
+      const result = await WorkerPermit.findOne({
+        attributes: ['id', 'category', 'description', 'duration', 'is_allowed', 'farm_id', 'user_id'],
+        where: {
+          id: { [Op.$eq]: permitId },
+        },
+      });
+      return result.dataValues;
+    } catch (error) {
+      throw new Error(error.message);
+    }
   },
   validateFarmTokenDuration: async (farmId) => {
     try {
