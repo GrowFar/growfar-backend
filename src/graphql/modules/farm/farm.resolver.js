@@ -129,4 +129,21 @@ module.exports = {
       }
     },
   },
+  findFarmWorkerPermitById: {
+    type: farmService.farmWorkerPermitType,
+    args: {
+      worker_permit_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    },
+    resolve: async (_, { worker_permit_id }) => {
+      try {
+        const permit = await farmService.getFarmWorkerPermitById(worker_permit_id);
+        const farm = await farmService.getFarmById(permit.farm_id);
+        const user = await userService.getUserById(farm.user_id);
+        farm.user = user;
+        return { ...permit, farm };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
 };

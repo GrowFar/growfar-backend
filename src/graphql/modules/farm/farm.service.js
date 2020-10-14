@@ -141,6 +141,16 @@ const farmWorkerTaskInput = new graphql.GraphQLInputObjectType({
   },
 });
 
+const farmWorkerTaskUpdate = new graphql.GraphQLInputObjectType({
+  name: 'FarmWorkerTaskUpdate',
+  fields: {
+    title: { type: graphql.GraphQLString },
+    description: { type: graphql.GraphQLString },
+    started_at: { type: graphql.GraphQLString },
+    ended_at: { type: graphql.GraphQLString },
+  },
+});
+
 const farmWorkerTaskDone = new graphql.GraphQLObjectType({
   name: 'FarmWorkerTaskDone',
   fields: {
@@ -187,6 +197,7 @@ module.exports = {
   farmWorkerListType,
   farmWorkerTask,
   farmWorkerTaskInput,
+  farmWorkerTaskUpdate,
   farmWorkerTaskDone,
   farmWorkerPermitType,
   farmWorkerPermitInput,
@@ -476,7 +487,34 @@ module.exports = {
           id: { [Op.$eq]: permitId },
         },
       });
+
+      if (!result) throw new Error(ErrorMessage.WORKER_PERMIT_NOT_FOUND);
       return result.dataValues;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  updateFarmWorkerPermit: async (worker_permit_id, farm_id, is_allowed) => {
+    try {
+      const result = await WorkerPermit.update({ isAllowed: is_allowed }, {
+        where: {
+          id: worker_permit_id,
+          farm_id: farm_id,
+        },
+      });
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  updateFarmWorkerTask: async (worker_task_id, worker_task_data) => {
+    try {
+      const result = await WorkerTask.update(worker_task_data, {
+        where: {
+          id: worker_task_id,
+        },
+      });
+      return result;
     } catch (error) {
       throw new Error(error.message);
     }

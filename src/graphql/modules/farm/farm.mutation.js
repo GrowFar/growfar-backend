@@ -111,6 +111,28 @@ module.exports = {
       }
     },
   },
+  createFarmWorkerPermitSubmit: {
+    type: farmService.farmWorkerPermitType,
+    args: {
+      worker_permit_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      is_allowed: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    },
+    resolve: async (_, { worker_permit_id, is_allowed, farm_id }) => {
+      try {
+        const farm = await farmService.getFarmById(farm_id);
+        const user = await userService.getUserById(farm.user_id);
+        farm.user = user;
+
+        await farmService.updateFarmWorkerPermit(worker_permit_id, farm_id, is_allowed);
+        const permit = await farmService.getFarmWorkerPermitById(worker_permit_id);
+
+        return { ...permit, farm };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
   generateFarmInvitationCode: {
     type: farmService.farmGeneratedToken,
     args: { farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) } },
@@ -123,6 +145,24 @@ module.exports = {
         await farmService.validateFarmTokenDuration(farmId);
         await farmService.insertNewFarmToken(workerRegistration);
         return { farm_id: farmId, generated_token: generatedToken, ended_at: endedAt };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
+  updateFarmWorkerTask: {
+    type: farmService.farmWorkerTask,
+    args: {
+      worker_task_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      farmWorkerTaskInput: { type: graphql.GraphQLNonNull(farmService.farmWorkerTaskUpdate) },
+    },
+    resolve: async (_, { worker_task_id, farmWorkerTaskInput }) => {
+      try {
+        if (farmWorkerTaskInput.started_at) farmWorkerTaskInput.started_at = moment(farmWorkerTaskInput.started_at, WORKER_TIME_FORMAT).format(WORKER_TIME_FORMAT);
+        if (farmWorkerTaskInput.ended_at) farmWorkerTaskInput.ended_at = moment(farmWorkerTaskInput.ended_at, WORKER_TIME_FORMAT).format(WORKER_TIME_FORMAT);
+        await farmService.updateFarmWorkerTask(worker_task_id, farmWorkerTaskInput);
+        const result = await farmService.getFarmWorkerTaskById(worker_task_id);
+        return result;
       } catch (error) {
         throw new Error(error.message);
       }

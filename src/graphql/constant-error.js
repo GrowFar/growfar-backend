@@ -12,4 +12,5 @@ module.exports = {
   WORKER_ALREADY_REGISTERED: 'Worker already registered',
   WORKER_TASK_NOT_FOUND: 'Worker task is not found',
   WORKER_TASK_DONE: 'Worker task is already done',
+  WORKER_PERMIT_NOT_FOUND: 'Worker permit is not found',
 };
