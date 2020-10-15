@@ -14,4 +14,6 @@ module.exports = {
   FARM_TOKEN_DURATION_TIME: 1,
   WORKER_TIME_FORMAT: 'HH:mm:ss',
   TIME_MINUTES: 'minutes',
+  TIME_ZONE_DEFAULT: '+00:00',
+  TIME_ZONE_JAKARTA: '+07:00',
 };

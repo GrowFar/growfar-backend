@@ -5,7 +5,7 @@ const _ = require('lodash');
 const { QueryTypes } = require('sequelize');
 
 const ErrorMessage = require('../../constant-error');
-const { TILE_KEY_FARM, TILE_RADIUS, CHARACTERS, FARM_TOKEN_LENGTH } = require('../../constant-value');
+const { TILE_KEY_FARM, TILE_RADIUS, CHARACTERS, FARM_TOKEN_LENGTH, TIME_ZONE_JAKARTA, TIME_ZONE_DEFAULT } = require('../../constant-value');
 const { connection, Farm, User, Op, Market, Commodity, WorkerRegistration, FarmWorker, WorkerTask, WorkerTaskDone, WorkerPermit } = require('../../../database');
 const { userType, userPermitType } = require('../user/user.service');
 const { tileClient } = require('../../../tile38');
@@ -524,7 +524,7 @@ module.exports = {
         SELECT user_id, worker_task_id, max(created_at) AS submit_at
         FROM Worker_Task_Done wtd
         WHERE user_id = '${user_id}'
-        AND date(created_at) = '${currentDate}'
+        AND date(convert_tz(created_at, '${TIME_ZONE_DEFAULT}', '${TIME_ZONE_JAKARTA}')) = '${currentDate}'
         GROUP BY user_id, worker_task_id
       `, { type: QueryTypes.SELECT }) || {};
 
@@ -616,7 +616,7 @@ module.exports = {
         SELECT * FROM Worker_Task_Done wtd
         WHERE user_id = ${user_id}
         AND worker_task_id = ${worker_task_id}
-        AND date(created_at) = '${currentDate}'
+        AND date(convert_tz(created_at, '${TIME_ZONE_DEFAULT}', '${TIME_ZONE_JAKARTA}')) = '${currentDate}'
         LIMIT 1
       `, { type: QueryTypes.SELECT }) || {};
 
