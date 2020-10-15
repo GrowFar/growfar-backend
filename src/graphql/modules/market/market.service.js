@@ -320,8 +320,6 @@ module.exports = {
         AND m2.price > 0
       `, { type: QueryTypes.SELECT }) || {};
 
-      console.log(farmMarketDataResult);
-
       const farmMarketResult = [{ price: 0 }, { price: 0 }];
 
       const priceResult = await connection.query(`
@@ -353,8 +351,6 @@ module.exports = {
         AND m2.submit_at = latest_market.submit_at
         AND m2.price > 0
       `, { type: QueryTypes.SELECT }) || {};
-
-      console.log(priceResult);
 
       priceResult.map(({ price, idx }) => {
         price = parseInt(price);

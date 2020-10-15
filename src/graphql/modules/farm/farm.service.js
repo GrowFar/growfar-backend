@@ -131,6 +131,18 @@ const farmWorkerTask = new graphql.GraphQLObjectType({
   },
 });
 
+const farmWorkerTaskProgress = new graphql.GraphQLObjectType({
+  name: 'FarmWorkerTaskProgress',
+  fields: {
+    id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    title: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    started_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    ended_at: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    is_done: { type: graphql.GraphQLBoolean },
+  },
+});
+
 const farmWorkerTaskInput = new graphql.GraphQLInputObjectType({
   name: 'FarmWorkerTaskInput',
   fields: {
@@ -184,6 +196,15 @@ const farmWorkerPermitInput = new graphql.GraphQLInputObjectType({
   },
 });
 
+const workerAttendanceType = new graphql.GraphQLObjectType({
+  name: 'workerAttendanceType',
+  fields: {
+    user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    inside_farm: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
+  },
+});
+
 module.exports = {
   farmType,
   farmShortType,
@@ -201,6 +222,8 @@ module.exports = {
   farmWorkerTaskDone,
   farmWorkerPermitType,
   farmWorkerPermitInput,
+  farmWorkerTaskProgress,
+  workerAttendanceType,
   generateFarmToken: () => {
     let result = '';
 
@@ -494,6 +517,22 @@ module.exports = {
       throw new Error(error.message);
     }
   },
+  getFarmWorkerTaskProgress: async (user_id) => {
+    try {
+      const currentDate = moment(new Date()).format('YYYY-MM-DD');
+      const result = await connection.query(`
+        SELECT user_id, worker_task_id, max(created_at) AS submit_at
+        FROM Worker_Task_Done wtd
+        WHERE user_id = '${user_id}'
+        AND date(created_at) = '${currentDate}'
+        GROUP BY user_id, worker_task_id
+      `, { type: QueryTypes.SELECT }) || {};
+
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
   updateFarmWorkerPermit: async (worker_permit_id, farm_id, is_allowed) => {
     try {
       const result = await WorkerPermit.update({ isAllowed: is_allowed }, {
@@ -561,7 +600,10 @@ module.exports = {
         },
       });
 
-      if (result) throw new Error(ErrorMessage.WORKER_ALREADY_REGISTERED);
+      if (result) {
+        return result;
+      }
+
       return null;
     } catch (error) {
       throw new Error(error.message);
@@ -580,6 +622,44 @@ module.exports = {
 
       if (result) throw new Error(ErrorMessage.WORKER_TASK_DONE);
       return null;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  validateWorkLocation: async (points, farm_id) => {
+    try {
+      let result = false;
+
+      points.map(({ id }) => {
+        const [, fId] = id.split('-');
+        if (fId == farm_id) result = true;
+      });
+
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  mergeFarmWorkerProgress: async (workerProgressData, farmWorkerTaskData) => {
+    try {
+      const workerProgressIds = [];
+      const mergedProgress = [];
+
+      workerProgressData.map(({ worker_task_id }) => {
+        workerProgressIds.push(worker_task_id);
+      });
+
+      farmWorkerTaskData.map(({ 'dataValues': task }) => {
+        task.is_done = false;
+
+        if (workerProgressIds.includes(task.id)) {
+          task.is_done = true;
+        }
+
+        mergedProgress.push(task);
+      });
+
+      return mergedProgress;
     } catch (error) {
       throw new Error(error.message);
     }

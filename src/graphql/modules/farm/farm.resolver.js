@@ -2,6 +2,7 @@ const graphql = require('graphql');
 const farmService = require('./farm.service');
 const userService = require('../user/user.service');
 
+const ErrorMessage = require('../../constant-error');
 const Pagination = require('../../../utils/pagination');
 
 module.exports = {
@@ -141,6 +142,45 @@ module.exports = {
         const user = await userService.getUserById(farm.user_id);
         farm.user = user;
         return { ...permit, farm };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
+  findFarmWorkerTaskProgress: {
+    type: graphql.GraphQLList(farmService.farmWorkerTaskProgress),
+    args: {
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    },
+    resolve: async (_, { farm_id, user_id }) => {
+      try {
+        const workProgress = await farmService.getFarmWorkerTaskProgress(user_id);
+        const farmWorkerTaskResult = await farmService.getFarmWorkerTaskByFarmId(farm_id);
+        const workProgressResult = await farmService.mergeFarmWorkerProgress(workProgress, farmWorkerTaskResult);
+        return workProgressResult;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
+  findWorkerIsOnWorkLocation: {
+    type: farmService.workerAttendanceType,
+    args: {
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      longitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
+      latitude: { type: graphql.GraphQLNonNull(graphql.GraphQLFloat) },
+    },
+    resolve: async (_, { farm_id, user_id, longitude, latitude }) => {
+      try {
+        const isWorkerRegistered = await farmService.validateRegisteredWorker(farm_id, user_id);
+        if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
+
+        const { points } = await farmService.getFarmNearby(longitude, latitude, 0.5);
+        const result = await farmService.validateWorkLocation(points, farm_id);
+        // send notification
+        return { farm_id, user_id, inside_farm: result };
       } catch (error) {
         throw new Error(error.message);
       }

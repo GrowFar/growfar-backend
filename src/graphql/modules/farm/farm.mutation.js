@@ -10,6 +10,7 @@ const FarmWorkerPermit = require('./farm_worker_permit');
 const WorkerTask = require('./worker_task');
 const Farm = require('./farm');
 
+const ErrorMessage = require('../../constant-error');
 const { FARM_TOKEN_DURATION_TIME, TIME_MINUTES, WORKER_TIME_FORMAT } = require('../../constant-value');
 
 module.exports = {
@@ -77,7 +78,10 @@ module.exports = {
         const workerTaskDone = new WorkerTaskDone(user_id, worker_task_id, timeNow);
         const user = await userService.getUserById(user_id);
         const workerTask = await farmService.getFarmWorkerTaskById(worker_task_id);
+        const isWorkerRegistered = await farmService.validateRegisteredWorker(workerTask.farm_id, user_id);
+        if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
         const workerTaskDoneResult = await farmService.insertFarmWorkerTaskOnDone(workerTaskDone);
+        // send notification
         return { id: workerTaskDoneResult.id, user, worker_task: workerTask, submit_at: workerTaskDoneResult.submit_at };
       } catch (error) {
         throw new Error(error.message);
@@ -105,6 +109,7 @@ module.exports = {
         const permit = await farmService.getFarmWorkerPermitById(id);
         farm.user = user;
 
+        // send notification
         return { ...permit, farm };
       } catch (error) {
         throw new Error(error.message);
