@@ -27,6 +27,18 @@ const userType = new graphql.GraphQLObjectType({
   },
 });
 
+const userPermitType = new graphql.GraphQLObjectType({
+  name: 'UserPermit',
+  fields: {
+    id: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    uid: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    fullname: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    phone: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
+    role: { type: graphql.GraphQLNonNull(roleEnum) },
+    permit_id: { type: graphql.GraphQLID },
+  },
+});
+
 const userInput = new graphql.GraphQLInputObjectType({
   name: 'UserInput',
   fields: {
@@ -39,6 +51,7 @@ const userInput = new graphql.GraphQLInputObjectType({
 
 module.exports = {
   userType,
+  userPermitType,
   userInput,
   getUserById: async (id) => {
     try {

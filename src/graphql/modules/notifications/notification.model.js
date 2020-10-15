@@ -5,7 +5,7 @@ const NOTIFICATION = Object.keys(NOTIFICATION_TYPE).map(key => NOTIFICATION_TYPE
 
 module.exports = (sequelize, DataTypes) => {
   const Notification = sequelize.define('Notification', {
-    notificationType: {
+    notification_type: {
       type: DataTypes.ENUM,
       values: NOTIFICATION,
       allowNull: false,

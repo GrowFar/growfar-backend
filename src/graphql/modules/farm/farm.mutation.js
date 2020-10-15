@@ -1,6 +1,7 @@
 const graphql = require('graphql');
 const farmService = require('./farm.service');
 const userService = require('../user/user.service');
+const notificationService = require('../notifications/notification.service');
 const moment = require('moment');
 
 const WorkerRegistration = require('./worker_registration');
@@ -12,6 +13,12 @@ const Farm = require('./farm');
 
 const ErrorMessage = require('../../constant-error');
 const { FARM_TOKEN_DURATION_TIME, TIME_MINUTES, WORKER_TIME_FORMAT } = require('../../constant-value');
+
+const NotificationFactory = require('../notifications/notification_factory');
+const { NOTIFICATION_TYPE } = require('../../../config');
+const { ABSENT, ATTENDANCE, TASK } = NOTIFICATION_TYPE;
+
+const notificationFactory = new NotificationFactory();
 
 module.exports = {
   createNewFarm: {
@@ -74,14 +81,31 @@ module.exports = {
     resolve: async (_, { user_id, worker_task_id }) => {
       try {
         await farmService.validateFarmWorkerTaskOnDone(user_id, worker_task_id);
+
         const timeNow = moment(new Date()).format(WORKER_TIME_FORMAT);
         const workerTaskDone = new WorkerTaskDone(user_id, worker_task_id, timeNow);
+
         const user = await userService.getUserById(user_id);
         const workerTask = await farmService.getFarmWorkerTaskById(worker_task_id);
+        const farm = await farmService.getFarmById(workerTask.farm_id);
+
         const isWorkerRegistered = await farmService.validateRegisteredWorker(workerTask.farm_id, user_id);
         if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
+
         const workerTaskDoneResult = await farmService.insertFarmWorkerTaskOnDone(workerTaskDone);
-        // send notification
+
+        const taskNotification = notificationFactory.getNotification(TASK);
+
+        taskNotification.notification_for = farm.user_id;
+        taskNotification.notification_type = TASK;
+        taskNotification.information = {
+          title: user.fullname,
+          data: 'Menyelesaikan ' + workerTask.title,
+          task_finish_at: workerTaskDoneResult.submit_at,
+        };
+
+        await notificationService.insertNotification(taskNotification);
+
         return { id: workerTaskDoneResult.id, user, worker_task: workerTask, submit_at: workerTaskDoneResult.submit_at };
       } catch (error) {
         throw new Error(error.message);
@@ -103,14 +127,57 @@ module.exports = {
           workerPermitInput.user_id,
         );
 
+        const isWorkerRegistered = await farmService.validateRegisteredWorker(workerPermitInput.farm_id, workerPermitInput.user_id);
+        if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
+
         const farm = await farmService.getFarmById(workerPermitInput.farm_id);
         const user = await userService.getUserById(workerPermitInput.user_id);
         const id = await farmService.insertNewWorkerPermit(farmWorkerPermit);
         const permit = await farmService.getFarmWorkerPermitById(id);
-        farm.user = user;
 
-        // send notification
-        return { ...permit, farm };
+        const taskNotification = notificationFactory.getNotification(ABSENT);
+
+        taskNotification.notification_for = farm.user_id;
+        taskNotification.notification_type = ABSENT;
+        taskNotification.information = {
+          title: user.fullname,
+          data: 'Mengajukan perizinan',
+        };
+
+        await notificationService.insertNotification(taskNotification);
+
+        return { ...permit, worker: user };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
+  createFarmWorkerAttendance: {
+    type: farmService.workerAttendanceType,
+    args: {
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    },
+    resolve: async (_, { farm_id, user_id }) => {
+      try {
+        const isWorkerRegistered = await farmService.validateRegisteredWorker(farm_id, user_id);
+        if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
+
+        const farm = await farmService.getFarmById(farm_id);
+        const user = await userService.getUserById(user_id);
+
+        const taskNotification = notificationFactory.getNotification(ATTENDANCE);
+
+        taskNotification.notification_for = farm.user_id;
+        taskNotification.notification_type = ATTENDANCE;
+        taskNotification.information = {
+          title: user.fullname,
+          data: 'Absen masuk kerja',
+        };
+
+        await notificationService.insertNotification(taskNotification);
+
+        return { farm_id, user_id, inside_farm: true };
       } catch (error) {
         throw new Error(error.message);
       }
@@ -125,14 +192,12 @@ module.exports = {
     },
     resolve: async (_, { worker_permit_id, is_allowed, farm_id }) => {
       try {
-        const farm = await farmService.getFarmById(farm_id);
-        const user = await userService.getUserById(farm.user_id);
-        farm.user = user;
 
         await farmService.updateFarmWorkerPermit(worker_permit_id, farm_id, is_allowed);
         const permit = await farmService.getFarmWorkerPermitById(worker_permit_id);
+        const user = await userService.getUserById(permit.user_id);
 
-        return { ...permit, farm };
+        return { ...permit, worker: user };
       } catch (error) {
         throw new Error(error.message);
       }

@@ -7,7 +7,7 @@ const { QueryTypes } = require('sequelize');
 const ErrorMessage = require('../../constant-error');
 const { TILE_KEY_FARM, TILE_RADIUS, CHARACTERS, FARM_TOKEN_LENGTH } = require('../../constant-value');
 const { connection, Farm, User, Op, Market, Commodity, WorkerRegistration, FarmWorker, WorkerTask, WorkerTaskDone, WorkerPermit } = require('../../../database');
-const { userType } = require('../user/user.service');
+const { userType, userPermitType } = require('../user/user.service');
 const { tileClient } = require('../../../tile38');
 
 const { PERMIT_CATEGORY } = require('../../../config');
@@ -116,7 +116,7 @@ const farmWorkerListType = new graphql.GraphQLObjectType({
   name: 'FarmWorkerList',
   fields: {
     farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
-    users: { type: graphql.GraphQLList(userType) },
+    users: { type: graphql.GraphQLList(userPermitType) },
   },
 });
 
@@ -181,7 +181,7 @@ const farmWorkerPermitType = new graphql.GraphQLObjectType({
     description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     duration: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
     is_allowed: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
-    farm: { type: graphql.GraphQLNonNull(farmType) },
+    worker: { type: graphql.GraphQLNonNull(userType) },
   },
 });
 
@@ -660,6 +660,36 @@ module.exports = {
       });
 
       return mergedProgress;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  mergeFarmWorkerWithPermit: async (users, farm_id) => {
+    try {
+      const workerTaskPermitResult = await connection.query(`
+        SELECT id, user_id
+        FROM Worker_Permit wp
+        WHERE created_at IN (
+          SELECT max(created_at) AS created_at
+          FROM Worker_Permit wp2
+          WHERE farm_id = ${farm_id}
+          AND is_allowed = 0
+          GROUP BY farm_id, user_id
+        )
+      `, { type: QueryTypes.SELECT }) || {};
+
+      users.map(user => {
+        user.permit_id = null;
+
+        workerTaskPermitResult.map(permit => {
+          if (user.id == permit.user_id) {
+            user.permit_id = permit.id;
+          }
+        });
+
+      });
+
+      return users;
     } catch (error) {
       throw new Error(error.message);
     }

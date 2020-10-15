@@ -124,7 +124,8 @@ module.exports = {
         const pagination = new Pagination(limit, page);
         const ids = await farmService.getFarmWorkerIdByFarmId(farm_id, pagination);
         const users = await userService.getUserByIds(ids);
-        return { farm_id, users };
+        const usersMergedResult = await farmService.mergeFarmWorkerWithPermit(users, farm_id);
+        return { farm_id, users: usersMergedResult };
       } catch (error) {
         throw new Error(error.message);
       }
@@ -138,10 +139,8 @@ module.exports = {
     resolve: async (_, { worker_permit_id }) => {
       try {
         const permit = await farmService.getFarmWorkerPermitById(worker_permit_id);
-        const farm = await farmService.getFarmById(permit.farm_id);
-        const user = await userService.getUserById(farm.user_id);
-        farm.user = user;
-        return { ...permit, farm };
+        const user = await userService.getUserById(permit.user_id);
+        return { ...permit, worker: user };
       } catch (error) {
         throw new Error(error.message);
       }
@@ -179,7 +178,7 @@ module.exports = {
 
         const { points } = await farmService.getFarmNearby(longitude, latitude, 0.5);
         const result = await farmService.validateWorkLocation(points, farm_id);
-        // send notification
+
         return { farm_id, user_id, inside_farm: result };
       } catch (error) {
         throw new Error(error.message);
