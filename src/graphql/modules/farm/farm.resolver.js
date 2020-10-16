@@ -185,4 +185,23 @@ module.exports = {
       }
     },
   },
+  findWorkerIsAlreadyAttendance: {
+    type: farmService.workerAttendanceCheckerType,
+    args: {
+      farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+      user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    },
+    resolve: async (_, { farm_id, user_id }) => {
+      try {
+        const isWorkerRegistered = await farmService.validateRegisteredWorker(farm_id, user_id);
+        if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
+
+        const attendance = await farmService.validateFarmWorkerAlreadyAttendance(farm_id, user_id);
+
+        return { farm_id, user_id, attendance };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+  },
 };

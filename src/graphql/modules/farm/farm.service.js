@@ -197,11 +197,20 @@ const farmWorkerPermitInput = new graphql.GraphQLInputObjectType({
 });
 
 const workerAttendanceType = new graphql.GraphQLObjectType({
-  name: 'workerAttendanceType',
+  name: 'WorkerAttendance',
   fields: {
     user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
     farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
     inside_farm: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
+  },
+});
+
+const workerAttendanceCheckerType = new graphql.GraphQLObjectType({
+  name: 'WorkerAttendanceChecker',
+  fields: {
+    user_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    farm_id: { type: graphql.GraphQLNonNull(graphql.GraphQLID) },
+    attendance: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
   },
 });
 
@@ -224,6 +233,7 @@ module.exports = {
   farmWorkerPermitInput,
   farmWorkerTaskProgress,
   workerAttendanceType,
+  workerAttendanceCheckerType,
   generateFarmToken: () => {
     let result = '';
 
@@ -634,6 +644,27 @@ module.exports = {
         const [, fId] = id.split('-');
         if (fId == farm_id) result = true;
       });
+
+      return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  validateFarmWorkerAlreadyAttendance: async (farm_id, user_id) => {
+    try {
+      const currentDate = moment(new Date()).format('YYYY-MM-DD');
+      const [notificationResult] = await connection.query(`
+        SELECT * FROM Notification n
+        WHERE notification_type = 'ATTENDANCE'
+        AND notification_for = ${farm_id}
+        AND JSON_EXTRACT(information, "$.user_id") = '${user_id}'
+        AND date(convert_tz(created_at, '${TIME_ZONE_DEFAULT}', '${TIME_ZONE_JAKARTA}')) = '${currentDate}'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `, { type: QueryTypes.SELECT }) || {};
+
+      console.log(notificationResult);
+      const result = notificationResult ? true : false;
 
       return result;
     } catch (error) {

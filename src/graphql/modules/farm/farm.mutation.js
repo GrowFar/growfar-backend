@@ -101,6 +101,7 @@ module.exports = {
         taskNotification.information = {
           title: user.fullname,
           data: 'Menyelesaikan ' + workerTask.title,
+          user_id: user_id,
           task_finish_at: workerTaskDoneResult.submit_at,
         };
 
@@ -142,6 +143,7 @@ module.exports = {
         taskNotification.information = {
           title: user.fullname,
           data: 'Mengajukan perizinan',
+          user_id: workerPermitInput.user_id,
         };
 
         await notificationService.insertNotification(taskNotification);
@@ -173,6 +175,7 @@ module.exports = {
         taskNotification.information = {
           title: user.fullname,
           data: 'Absen masuk kerja',
+          user_id: user_id,
         };
 
         await notificationService.insertNotification(taskNotification);
