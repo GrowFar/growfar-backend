@@ -1,8 +1,9 @@
 const graphql = require('graphql');
+const moment = require('moment');
+
 const farmService = require('./farm.service');
 const userService = require('../user/user.service');
 const notificationService = require('../notifications/notification.service');
-const moment = require('moment');
 
 const WorkerRegistration = require('./worker_registration');
 const WorkerTaskDone = require('./worker_task_done');
@@ -102,7 +103,7 @@ module.exports = {
           title: user.fullname,
           data: 'Menyelesaikan ' + workerTask.title,
           user_id: user_id,
-          task_finish_at: workerTaskDoneResult.submit_at,
+          task_finish_at: workerTaskDoneResult.created_at,
         };
 
         await notificationService.insertNotification(taskNotification);
@@ -144,6 +145,7 @@ module.exports = {
           title: user.fullname,
           data: 'Mengajukan perizinan',
           user_id: workerPermitInput.user_id,
+          submit_at: permit.created_at,
         };
 
         await notificationService.insertNotification(taskNotification);
@@ -176,6 +178,7 @@ module.exports = {
           title: user.fullname,
           data: 'Absen masuk kerja',
           user_id: user_id,
+          submit_at: moment(new Date()),
         };
 
         await notificationService.insertNotification(taskNotification);

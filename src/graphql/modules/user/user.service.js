@@ -35,6 +35,7 @@ const userPermitType = new graphql.GraphQLObjectType({
     fullname: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     phone: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     role: { type: graphql.GraphQLNonNull(roleEnum) },
+    attendance_at: { type: graphql.GraphQLString },
     permit_id: { type: graphql.GraphQLID },
   },
 });

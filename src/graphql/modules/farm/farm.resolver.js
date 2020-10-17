@@ -124,7 +124,9 @@ module.exports = {
         const pagination = new Pagination(limit, page);
         const ids = await farmService.getFarmWorkerIdByFarmId(farm_id, pagination);
         const users = await userService.getUserByIds(ids);
-        const usersMergedResult = await farmService.mergeFarmWorkerWithPermit(users, farm_id);
+        const usersAttendanceIds = await farmService.validateAllFarmWorkerAlreadyAttendance(farm_id, ids);
+        const usersMergedAttendance = await farmService.mergeFarmWorkerWithAttendance(users, usersAttendanceIds);
+        const usersMergedResult = await farmService.mergeFarmWorkerWithPermit(usersMergedAttendance, farm_id);
         return { farm_id, users: usersMergedResult };
       } catch (error) {
         throw new Error(error.message);

@@ -515,7 +515,7 @@ module.exports = {
   getFarmWorkerPermitById: async (permitId) => {
     try {
       const result = await WorkerPermit.findOne({
-        attributes: ['id', 'category', 'description', 'duration', 'is_allowed', 'farm_id', 'user_id'],
+        attributes: ['id', 'category', 'description', 'duration', 'is_allowed', 'farm_id', 'user_id', 'created_at'],
         where: {
           id: { [Op.$eq]: permitId },
         },
@@ -663,10 +663,59 @@ module.exports = {
         LIMIT 1
       `, { type: QueryTypes.SELECT }) || {};
 
-      console.log(notificationResult);
       const result = notificationResult ? true : false;
 
       return result;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  validateAllFarmWorkerAlreadyAttendance: async (farm_id, ids) => {
+    try {
+      ids = ids.map(id => `"${id}"`).join(',');
+
+      const currentDate = moment(new Date()).format('YYYY-MM-DD');
+      const notificationResult = await connection.query(`
+        SELECT JSON_EXTRACT(information, "$.user_id") AS user_id, created_at
+        FROM Notification n
+        WHERE notification_type = 'ATTENDANCE'
+        AND notification_for = ${farm_id}
+        AND JSON_EXTRACT(information, "$.user_id") IN (${ids.length > 0 ? ids : '"0"'})
+        AND date(convert_tz(created_at, '${TIME_ZONE_DEFAULT}', '${TIME_ZONE_JAKARTA}')) = '${currentDate}'
+        ORDER BY created_at DESC
+      `, { type: QueryTypes.SELECT }) || {};
+
+      return notificationResult;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+  mergeFarmWorkerWithAttendance: async (users, attendanceIds) => {
+    try {
+      const ids = new Map();
+
+      attendanceIds.map(({ user_id, created_at }) => {
+        if (!ids.has(user_id)) {
+          ids.set(user_id, {
+            user_id,
+            created_at,
+          });
+        }
+      });
+
+      users.map(user => {
+        user.attendance_at = null;
+        const id = user.id.toString();
+
+        if (ids.has(user.id.toString())) {
+          const { created_at } = ids.get(id);
+          const attendance_at = moment(created_at).format();
+          user.attendance_at = attendance_at;
+        }
+
+      });
+
+      return users;
     } catch (error) {
       throw new Error(error.message);
     }
