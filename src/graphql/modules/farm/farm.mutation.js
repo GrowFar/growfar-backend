@@ -103,7 +103,7 @@ module.exports = {
           title: user.fullname,
           data: 'Menyelesaikan ' + workerTask.title,
           user_id: user_id,
-          task_finish_at: workerTaskDoneResult.created_at,
+          task_finish_at: workerTaskDoneResult.createdAt,
         };
 
         await notificationService.insertNotification(taskNotification);
