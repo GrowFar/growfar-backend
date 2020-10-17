@@ -650,13 +650,13 @@ module.exports = {
       throw new Error(error.message);
     }
   },
-  validateFarmWorkerAlreadyAttendance: async (farm_id, user_id) => {
+  validateFarmWorkerAlreadyAttendance: async (farm_user_id, user_id) => {
     try {
       const currentDate = moment(new Date()).format('YYYY-MM-DD');
       const [notificationResult] = await connection.query(`
         SELECT * FROM Notification n
         WHERE notification_type = 'ATTENDANCE'
-        AND notification_for = ${farm_id}
+        AND notification_for = ${farm_user_id}
         AND JSON_EXTRACT(information, "$.user_id") = '${user_id}'
         AND date(convert_tz(created_at, '${TIME_ZONE_DEFAULT}', '${TIME_ZONE_JAKARTA}')) = '${currentDate}'
         ORDER BY created_at DESC

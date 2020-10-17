@@ -198,7 +198,8 @@ module.exports = {
         const isWorkerRegistered = await farmService.validateRegisteredWorker(farm_id, user_id);
         if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
 
-        const attendance = await farmService.validateFarmWorkerAlreadyAttendance(farm_id, user_id);
+        const farm = await farmService.getFarmById(farm_id);
+        const attendance = await farmService.validateFarmWorkerAlreadyAttendance(farm.user_id, user_id);
 
         return { farm_id, user_id, attendance };
       } catch (error) {
