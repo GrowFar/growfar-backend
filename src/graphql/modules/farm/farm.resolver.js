@@ -5,6 +5,8 @@ const userService = require('../user/user.service');
 const ErrorMessage = require('../../constant-error');
 const Pagination = require('../../../utils/pagination');
 
+const { FARM_TILE_RADIUS_STANDARD } = require('../../constant-value');
+
 module.exports = {
   findFarmById: {
     type: farmService.farmType,
@@ -178,7 +180,7 @@ module.exports = {
         const isWorkerRegistered = await farmService.validateRegisteredWorker(farm_id, user_id);
         if (!isWorkerRegistered) throw new Error(ErrorMessage.WORKER_IS_NOT_REGISTERED);
 
-        const { points } = await farmService.getFarmNearby(longitude, latitude, 0.5);
+        const { points } = await farmService.getFarmNearby(longitude, latitude, FARM_TILE_RADIUS_STANDARD);
         const result = await farmService.validateWorkLocation(points, farm_id);
 
         return { farm_id, user_id, inside_farm: result };
