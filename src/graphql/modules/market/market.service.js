@@ -52,6 +52,8 @@ const marketPriceReportType = new graphql.GraphQLObjectType({
     previousPercentage: { type: graphql.GraphQLFloat },
     currentPrice: { type: graphql.GraphQLInt },
     currentPercentage: { type: graphql.GraphQLFloat },
+    predictionLowPrice: { type: graphql.GraphQLFloat },
+    predictionHighPrice: { type: graphql.GraphQLFloat },
     data: { type: graphql.GraphQLList(farmMarketType) },
   },
 });
@@ -74,6 +76,30 @@ const percentageDecision = (percentage) => {
   }
 
   return percentage;
+};
+
+const average = data => {
+  const sumResult = data.reduce((sum, value) => {
+    return sum + value;
+  }, 0);
+
+  const avg = sumResult / data.length;
+  return avg;
+};
+
+const standardDeviation = values => {
+  const avg = average(values);
+
+  const squareDiffs = values.map(value => {
+    const diff = value - avg;
+    const sqrDiff = diff * diff;
+    return sqrDiff;
+  });
+
+  const avgSquareDiff = average(squareDiffs);
+
+  const stdDev = Math.sqrt(avgSquareDiff);
+  return stdDev;
 };
 
 const normalizePercentage = (percentage) => {
@@ -214,6 +240,29 @@ module.exports = {
 
       const farmMarketPriceResult = [{ price: 0 }, { price: 0 }, { price: 0 }];
 
+      const rangeData = await connection.query(`
+        SELECT IFNULL(m2.price, 0) AS price
+        FROM Market m2
+        INNER JOIN (
+          SELECT farm_id, commodity_id, max(submit_at) AS submit_at FROM Market m
+          WHERE commodity_id = ${commodity_id}
+          AND submit_at BETWEEN '${dateOneWeekAgo}' AND '${dateNowWeek}'
+          GROUP BY farm_id, commodity_id
+          ) AS latest_market
+        ON m2.farm_id = latest_market.farm_id AND m2.commodity_id = latest_market.commodity_id AND m2.submit_at = latest_market.submit_at
+        WHERE m2.farm_id IN (${ids})
+        AND m2.commodity_id = ${commodity_id}
+        AND m2.submit_at = latest_market.submit_at
+        AND m2.price > 0
+      `, { type: QueryTypes.SELECT }) || {};
+
+      const rangeDataResult = rangeData.map(({ price }) => price);
+      rangeDataResult.sort((a, b) => a - b);
+
+      const averageResult = average(rangeDataResult);
+      const standardDeviationResult = standardDeviation(rangeDataResult);
+      const predictionPrices = [averageResult - standardDeviationResult || 0, averageResult + standardDeviationResult || 0];
+
       const priceResult = await connection.query(`
         SELECT IFNULL(sum(m2.price), 0) AS price, (SELECT 2) AS idx
         FROM Market m2
@@ -287,6 +336,8 @@ module.exports = {
         previousPercentage: previousPercentage,
         currentPrice: Math.round(weekOne.price) || 0,
         currentPercentage: currentPercentage,
+        predictionLowPrice: predictionPrices[0],
+        predictionHighPrice: predictionPrices[1],
         data,
       };
     } catch (error) {
