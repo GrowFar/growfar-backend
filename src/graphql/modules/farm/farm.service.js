@@ -181,6 +181,7 @@ const farmWorkerPermitType = new graphql.GraphQLObjectType({
     description: { type: graphql.GraphQLNonNull(graphql.GraphQLString) },
     duration: { type: graphql.GraphQLNonNull(graphql.GraphQLInt) },
     is_allowed: { type: graphql.GraphQLNonNull(graphql.GraphQLBoolean) },
+    submit_at: { type: graphql.GraphQLString },
     worker: { type: graphql.GraphQLNonNull(userType) },
   },
 });
@@ -515,13 +516,16 @@ module.exports = {
   getFarmWorkerPermitById: async (permitId) => {
     try {
       const result = await WorkerPermit.findOne({
-        attributes: ['id', 'category', 'description', 'duration', 'is_allowed', 'farm_id', 'user_id', 'created_at'],
+        attributes: ['id', 'category', 'description', 'duration', 'is_allowed', 'farm_id', 'user_id', ['created_at', 'submit_at']],
         where: {
           id: { [Op.$eq]: permitId },
         },
       });
 
       if (!result) throw new Error(ErrorMessage.WORKER_PERMIT_NOT_FOUND);
+
+      result.dataValues.submit_at = moment(result.dataValues.submit_at).format();
+
       return result.dataValues;
     } catch (error) {
       throw new Error(error.message);
